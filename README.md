@@ -179,6 +179,10 @@ _마지막 자동 갱신: 2026-10-04 16:30 KST · [주간 보고서](reports/wee
 
 ![DORA 대시보드 샘플 시안](docs/images/dashboard-sample.png)
 
+실제 데이터 (2026-10-04 첫 배포 직후, 배포 1회라 지표는 아직 의미 있는 수준이 아님):
+
+![DORA 대시보드 실제 데이터](docs/images/dashboard-live.jpg)
+
 ---
 
 ## 9. AI 활용 공개
