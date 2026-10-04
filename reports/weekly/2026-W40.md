@@ -1,16 +1,16 @@
 # DORA 주간 보고서 2026-W40
 
 - 저장소: `03jiho/noticatch`
-- 생성 시각: 2026-10-04 16:49 (KST), GitHub Actions 자동 생성
+- 생성 시각: 2026-10-04 17:09 (KST), GitHub Actions 자동 생성
 - 집계 기간: 최근 30일 / 배포 기준 워크플로우: `deploy-pages.yml`
 
 ## 요약
 
 | 지표 | 최근 30일 | 등급(참고) |
 |---|---|---|
-| Deployment Frequency | 3회 (주 0.7회) | Medium |
-| Lead Time for Changes | 1분 (중앙값, n=3) | Elite |
-| Change Failure Rate | 0% (0/3) | Elite |
+| Deployment Frequency | 4회 (주 0.93회) | Medium |
+| Lead Time for Changes | 1분 (중앙값, n=4) | Elite |
+| Change Failure Rate | 0% (0/4) | Elite |
 | MTTR | 데이터 없음 (중앙값, n=0) | N/A |
 
 ## 주간 추이
@@ -24,12 +24,13 @@
 | 2026-W37 (2026-09-07~) | 0 | 0 | 데이터 없음 | 데이터 없음 | 데이터 없음 |
 | 2026-W38 (2026-09-14~) | 0 | 0 | 데이터 없음 | 데이터 없음 | 데이터 없음 |
 | 2026-W39 (2026-09-21~) | 0 | 0 | 데이터 없음 | 데이터 없음 | 데이터 없음 |
-| 2026-W40 (2026-09-28~) | 3 | 0 | 1분 | 0% | 데이터 없음 |
+| 2026-W40 (2026-09-28~) | 4 | 0 | 1분 | 0% | 데이터 없음 |
 
 ## 최근 배포
 
 | 시각(UTC) | 커밋 | 결과 | 실행 |
 |---|---|---|---|
+| 2026-10-04 08:09 | `e687798` | success | [run](https://github.com/03jiho/noticatch/actions/runs/37187990621) |
 | 2026-10-04 07:49 | `99decdb` | success | [run](https://github.com/03jiho/noticatch/actions/runs/37186951293) |
 | 2026-10-04 07:32 | `4d66fe9` | success | [run](https://github.com/03jiho/noticatch/actions/runs/37186083930) |
 | 2026-10-04 07:29 | `6019621` | success | [run](https://github.com/03jiho/noticatch/actions/runs/37185943210) |
