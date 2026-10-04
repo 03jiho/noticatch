@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-10-04T07:30:03+00:00",
+  "repo": "03jiho/noticatch",
+  "window_days": 30,
+  "deploy_workflow": "deploy-pages.yml",
+  "metrics": {
+    "deployment_frequency": {
+      "successful_deploys": 1,
+      "per_week": 0.23
+    },
+    "lead_time_for_changes": {
+      "median_h": 0.01,
+      "samples": 1
+    },
+    "change_failure_rate": {
+      "rate": 0.0,
+      "failed": 0,
+      "total": 1
+    },
+    "mttr": {
+      "median_h": null,
+      "samples": 0
+    }
+  },
+  "levels": {
+    "deployment_frequency": "Low",
+    "lead_time_for_changes": "Elite",
+    "change_failure_rate": "Elite",
+    "mttr": "N/A"
+  },
+  "weekly": [
+    {
+      "week": "2026-W33",
+      "start": "2026-08-10",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W34",
+      "start": "2026-08-17",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W35",
+      "start": "2026-08-24",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W36",
+      "start": "2026-08-31",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W37",
+      "start": "2026-09-07",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W38",
+      "start": "2026-09-14",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W39",
+      "start": "2026-09-21",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W40",
+      "start": "2026-09-28",
+      "deploys": 1,
+      "failed": 0,
+      "lead_time_median_h": 0.01,
+      "change_failure_rate": 0.0,
+      "mttr_median_h": null
+    }
+  ],
+  "deployments": [
+    {
+      "run_id": 37185943210,
+      "sha": "6019621",
+      "conclusion": "success",
+      "created_at": "2026-10-04T07:29:38Z",
+      "finished_at": "2026-10-04T07:29:55Z",
+      "lead_times_h": [
+        0.01
+      ],
+      "url": "https://github.com/03jiho/noticatch/actions/runs/37185943210"
+    }
+  ],
+  "recoveries": []
+}
