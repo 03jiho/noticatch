@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 프로젝트 제안서 (README)
+    url: https://github.com/03jiho/noticatch#readme
+    about: 프로젝트 목표와 범위를 먼저 확인해 주세요.

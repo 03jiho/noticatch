@@ -185,14 +185,54 @@ _마지막 자동 갱신: 2026-10-04 16:32 KST · [주간 보고서](reports/wee
 
 ---
 
-## 9. AI 활용 공개
+## 9. 3주차: GitHub Projects 계획·추적 체계
+
+- **칸반 보드:** [NotiCatch Roadmap (GitHub Project)](https://github.com/users/03jiho/projects/1) · 컬럼 `Backlog → To Do → In Progress → Review → Done`
+- **이슈:** [백로그 17개](https://github.com/03jiho/noticatch/issues) · **마일스톤:** [Sprint 1, Sprint 2](https://github.com/03jiho/noticatch/milestones) · **라벨:** [라벨 체계](https://github.com/03jiho/noticatch/labels)
+
+### 구성
+
+| 항목 | 내용 | 파일 |
+|---|---|---|
+| 이슈 템플릿 | Bug / Feature (Issue Forms, 라벨 자동 지정) | [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE) |
+| PR 템플릿 | 관련 이슈, 변경 내용, 체크리스트 | [`.github/pull_request_template.md`](.github/pull_request_template.md) |
+| 라벨 체계 | `type:` 6종 / `area:` 5종 / `priority:` P0~P2 / `size:` 1·2·3·5·8 (스토리 포인트) | [`project/labels.yml`](project/labels.yml) |
+| 마일스톤 | Sprint 1 · 요구사항·설계 (10/04~10/17), Sprint 2 · 크롤러·API v1 (10/18~10/31) | [`project/backlog.yml`](project/backlog.yml) |
+| 백로그 | 이슈 17개 (Sprint 1: 9, Sprint 2: 6, 미정: 2), 모두 완료 조건 포함 | [`project/backlog.yml`](project/backlog.yml) |
+| 자동 생성 | 위 YAML을 읽어 라벨·마일스톤·이슈를 만드는 워크플로우 (재실행해도 중복 없음) | [`bootstrap-backlog.yml`](.github/workflows/bootstrap-backlog.yml) |
+
+라벨·백로그를 코드(YAML)로 관리해서, 다른 학과나 학교에서 포크해도 같은 체계를 한 번에 만들 수 있게 했다.
+
+### 스프린트 운영 규칙
+
+1. 스프린트는 2주, 마일스톤 하나가 스프린트 하나다.
+2. 스프린트 계획 때 이슈를 `Backlog` → `To Do`로 옮기고 마일스톤을 지정한다.
+3. 작업을 시작하면 본인을 Assignee로 지정하고 `In Progress`로 옮긴다. (Cycle Time 시작 시점)
+4. PR을 올리면 `Review`, 이슈가 닫히면 `Done`으로 자동 이동한다.
+5. 스토리 포인트는 `size:` 라벨로 붙인다. 8은 너무 크니 쪼갠다.
+
+### 스프린트 분석 (선택 과제)
+
+[`sprint-metrics.yml`](.github/workflows/sprint-metrics.yml) 이 이슈가 닫히거나 라벨·마일스톤이 바뀔 때, 그리고 매일 00:00(KST)에 [`scripts/sprint_metrics.py`](scripts/sprint_metrics.py) 를 실행해 아래 표와 차트를 갱신한다. 결과 JSON은 아티팩트로도 올라간다.
+
+- **Velocity**: 스프린트 안에서 닫힌 이슈의 스토리 포인트 합 (계획 대비 완료)
+- **Burndown**: 스프린트 시작일부터 날짜별 남은 포인트와 이상적인 감소선
+- **Cycle Time**: 담당자 지정(작업 시작) → 이슈 종료
+
+<!-- SPRINT:START -->
+_아직 수집 전. `Sprint Metrics` 워크플로우가 처음 실행되면 이 자리에 표와 차트가 채워진다._
+<!-- SPRINT:END -->
+
+---
+
+## 10. AI 활용 공개
 
 본 과제는 생성형 AI의 도움을 받아 수행했으며, 수업 AI 활용 정책에 따라 아래와 같이 공개한다.
 
 | 항목 | 내용 |
 |---|---|
 | 도구 | Claude (Anthropic) — Claude 데스크톱 앱 Cowork 모드, Claude in Chrome 브라우저 연동 |
-| 사용 일시 | 2026년 10월 4일 (1·2주차) |
+| 사용 일시 | 2026년 10월 4일 (1~3주차) |
 | 사용자 | 김지호 (2243577) |
 
 ### 입력 프롬프트 (요지 정리)
@@ -206,6 +246,7 @@ _마지막 자동 갱신: 2026-10-04 16:32 KST · [주간 보고서](reports/wee
 7. "AI 활용 공개 내용을 정리해서 추가해줘."
 8. "프로필 README는 이모지 빼고 사람이 쓴 것처럼 다시 써줘. 컴퓨터공학과이고 AI 에이전트를 활용한 바이브코딩에 관심 있다고 정리해줘." (1주차 선택 과제)
 9. 2주차 과제 공지(DORA 메트릭 수집 자동화) 전문을 붙여넣고 수행 도움을 요청
+10. 3주차 과제 공지(GitHub Projects 계획·추적 체계 구축) 전문을 붙여넣고 수행 도움을 요청
 
 ### 활용 범위
 
@@ -218,6 +259,7 @@ _마지막 자동 갱신: 2026-10-04 16:32 KST · [주간 보고서](reports/wee
 | clone·커밋·푸시 | 명령어 안내 | 로컬에서 직접 실행 (`f50a835`) |
 | Profile README | 초안 작성, 웹 편집기로 `03jiho/03jiho` 저장소에 커밋 | 학과·관심 분야 제시, 문체 수정 요청 |
 | 2주차 DORA | 수집 스크립트·워크플로우·대시보드 작성, 가상 데이터로 로직 테스트, 샘플 화면 캡처 | 저장소 위치·진행 방식 결정, 로컬에서 커밋·푸시, Pages 설정 승인 |
+| 3주차 Projects | 이슈·PR 템플릿, 라벨 체계, 백로그 17개·마일스톤 초안 작성, 생성·분석 스크립트와 워크플로우 작성, 브라우저로 Project 보드 생성·설정 | 백로그 검토, 로컬에서 커밋·푸시, 실제 작업 진행과 이슈 종료 |
 
 ### 정보 검증
 

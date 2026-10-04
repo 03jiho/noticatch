@@ -1,0 +1,62 @@
+name: 버그 제보
+description: 동작이 잘못되었거나 오류가 발생했을 때
+title: "[Bug] "
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        제보해 주셔서 감사합니다. 재현할 수 있게 최대한 구체적으로 적어주세요.
+  - type: textarea
+    id: what
+    attributes:
+      label: 무슨 문제가 있나요?
+      description: 어떤 일이 일어났고, 원래는 어떻게 동작해야 했는지 적어주세요.
+      placeholder: 예) 키워드 '장학'을 구독했는데 장학 공지가 올라와도 알림이 오지 않아요.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 방법
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      options:
+        - 크롤러 (공지 수집)
+        - 백엔드 API
+        - 웹 화면
+        - 알림 (이메일/푸시)
+        - 배포·CI
+        - 잘 모르겠음
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 심각도
+      options:
+        - 서비스가 멈춤 / 데이터 손실
+        - 주요 기능이 안 됨
+        - 불편하지만 우회 가능
+        - 사소함 (오타, 레이아웃)
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 환경
+      description: 브라우저, OS, 접속 시각 등
+      placeholder: Chrome 129 / Windows 11 / 2026-10-05 14:00
+  - type: textarea
+    id: logs
+    attributes:
+      label: 로그 / 스크린샷
+      render: shell

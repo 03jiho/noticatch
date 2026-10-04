@@ -1,0 +1,188 @@
+# 초기 백로그. Bootstrap Backlog 워크플로우가 이 파일을 읽어 마일스톤과 이슈를 만든다.
+# 같은 제목의 이슈/마일스톤이 이미 있으면 건너뛰므로 여러 번 실행해도 안전하다.
+# 스프린트는 2주 단위. start는 번다운 차트의 시작일로 쓴다.
+
+milestones:
+  - title: "Sprint 1 · 요구사항·설계"
+    start: "2026-10-04"
+    due: "2026-10-17"
+    description: "사용자 조사로 문제를 검증하고, 요구사항과 설계(DB·API·크롤러 인터페이스)를 확정한다."
+  - title: "Sprint 2 · 크롤러·API v1"
+    start: "2026-10-18"
+    due: "2026-10-31"
+    description: "게시판 2곳 공지를 수집해 API로 조회할 수 있는 MVP를 만든다. 중간 발표 데모 기준."
+
+issues:
+  # ---------------- Sprint 1
+  - title: "재학생 인터뷰·설문으로 공지 확인 습관 조사"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: research", "priority: P0", "size: 3"]
+    body: |
+      ## 목표
+      공지를 놓치는 문제가 실제로 얼마나 자주, 어떤 상황에서 생기는지 확인한다.
+
+      ## 완료 조건
+      - [ ] 재학생 5명 이상 인터뷰 또는 설문 응답 수집
+      - [ ] 질문: 최근 놓친 공지, 주로 확인하는 경로, 받고 싶은 키워드
+      - [ ] 결과를 `docs/user-research.md`에 정리하고 README 문제정의에 근거로 반영
+
+  - title: "대상 게시판 목록과 크롤링 허용 여부 조사"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: research", "area: crawler", "priority: P0", "size: 2"]
+    body: |
+      ## 목표
+      어떤 게시판을 수집할지 정하고, 수집해도 되는지 확인한다.
+
+      ## 완료 조건
+      - [ ] 학교 홈페이지·학과·LMS 등 후보 게시판 목록과 URL 정리
+      - [ ] 각 사이트의 robots.txt, 이용약관 확인 결과 기록
+      - [ ] 로그인 필요 여부, HTML 구조(목록/상세) 메모
+
+  - title: "사용자 스토리와 요구사항 정리"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: docs", "priority: P1", "size: 2"]
+    body: |
+      ## 목표
+      인터뷰 결과를 바탕으로 핵심 기능 3개의 사용자 스토리와 완료 조건을 쓴다.
+
+      ## 완료 조건
+      - [ ] "~로서, ~하고 싶다, ~하기 위해" 형식의 스토리 8개 이상
+      - [ ] 각 스토리를 이슈로 쪼개 백로그에 반영
+
+  - title: "Issue/PR 템플릿과 라벨 체계 구성"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: chore", "area: infra", "priority: P1", "size: 1"]
+    body: |
+      ## 완료 조건
+      - [ ] Bug / Feature 이슈 템플릿 (Issue Forms)
+      - [ ] PR 템플릿
+      - [ ] type / area / priority / size 라벨 체계 (`project/labels.yml`)
+
+  - title: "GitHub Project 칸반 보드 구성"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: chore", "priority: P1", "size: 1"]
+    body: |
+      ## 완료 조건
+      - [ ] Backlog / To Do / In Progress / Review / Done 상태 컬럼
+      - [ ] 저장소 이슈 자동 추가, 닫힌 이슈 Done 자동 이동
+      - [ ] 초기 백로그 이슈를 보드에 배치
+
+  - title: "CONTRIBUTING.md 작성"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: docs", "priority: P2", "size: 2", "good first issue"]
+    body: |
+      ## 목표
+      외부 기여자가 크롤러 플러그인을 추가할 수 있도록 안내한다.
+
+      ## 완료 조건
+      - [ ] 개발 환경 세팅, 브랜치·커밋 규칙
+      - [ ] 크롤러 플러그인 추가 방법 (예시 포함)
+      - [ ] 이슈·PR 작성 가이드
+
+  - title: "DB 스키마 설계 (공지·사용자·구독)"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: design", "area: backend", "priority: P1", "size: 3"]
+    body: |
+      ## 완료 조건
+      - [ ] notice, source, user, subscription, notification_log 테이블 정의
+      - [ ] 중복 공지 판별 키(출처 + 원문 ID 또는 URL) 결정
+      - [ ] ERD를 `docs/design/` 에 저장
+
+  - title: "크롤러 플러그인 인터페이스 정의"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: design", "area: crawler", "priority: P0", "size: 3"]
+    body: |
+      ## 목표
+      게시판마다 파일 하나만 추가하면 수집이 되도록 공통 인터페이스를 정한다.
+
+      ## 완료 조건
+      - [ ] `fetch_list()`, `parse_detail()` 등 메서드와 반환 타입 정의
+      - [ ] 플러그인 등록 방식 (폴더 스캔 또는 설정 파일)
+      - [ ] 예시 플러그인 스켈레톤
+
+  - title: "API 명세 초안 작성"
+    milestone: "Sprint 1 · 요구사항·설계"
+    labels: ["type: design", "area: backend", "priority: P1", "size: 2"]
+    body: |
+      ## 완료 조건
+      - [ ] 공지 목록/검색, 구독 등록/삭제 엔드포인트 정의
+      - [ ] 요청·응답 예시 (OpenAPI 또는 표)
+
+  # ---------------- Sprint 2
+  - title: "학교 홈페이지 공지 크롤러 구현"
+    milestone: "Sprint 2 · 크롤러·API v1"
+    labels: ["type: feature", "area: crawler", "priority: P0", "size: 5"]
+    body: |
+      ## 사용자 스토리
+      재학생으로서, 학교 홈페이지 공지를 한곳에서 보고 싶다.
+
+      ## 완료 조건
+      - [ ] 플러그인 인터페이스에 맞춘 구현
+      - [ ] 목록·상세(제목, 작성일, 본문, URL) 수집
+      - [ ] 요청 간격 제한, 실패 시 재시도
+      - [ ] 단위 테스트 (저장된 HTML 샘플 기준)
+
+  - title: "학과 게시판 공지 크롤러 구현"
+    milestone: "Sprint 2 · 크롤러·API v1"
+    labels: ["type: feature", "area: crawler", "priority: P1", "size: 3"]
+    body: |
+      ## 완료 조건
+      - [ ] 컴퓨터공학과 게시판 플러그인
+      - [ ] 홈페이지 크롤러와 같은 출력 형식
+      - [ ] 단위 테스트
+
+  - title: "공지 중복 제거 로직"
+    milestone: "Sprint 2 · 크롤러·API v1"
+    labels: ["type: feature", "area: crawler", "priority: P1", "size: 2"]
+    body: |
+      ## 완료 조건
+      - [ ] 같은 공지가 여러 게시판에 올라와도 한 번만 저장
+      - [ ] 판별 기준과 테스트 케이스
+
+  - title: "FastAPI 공지 조회 API"
+    milestone: "Sprint 2 · 크롤러·API v1"
+    labels: ["type: feature", "area: backend", "priority: P0", "size: 5"]
+    body: |
+      ## 완료 조건
+      - [ ] `GET /notices` (페이지네이션, 게시판·키워드 필터)
+      - [ ] `GET /notices/{id}`
+      - [ ] Swagger 문서 확인, 테스트
+
+  - title: "GitHub Actions로 주기 크롤링 실행"
+    milestone: "Sprint 2 · 크롤러·API v1"
+    labels: ["type: chore", "area: infra", "priority: P1", "size: 2"]
+    body: |
+      ## 완료 조건
+      - [ ] 30분 간격 schedule 워크플로우
+      - [ ] 실패 시 알림(이슈 생성 또는 로그)
+
+  - title: "pytest 설정과 CI 테스트 워크플로우"
+    milestone: "Sprint 2 · 크롤러·API v1"
+    labels: ["type: chore", "area: infra", "priority: P2", "size: 2"]
+    body: |
+      ## 완료 조건
+      - [ ] pytest 기본 구성
+      - [ ] PR마다 테스트 실행하는 워크플로우
+
+  # ---------------- Backlog (마일스톤 미정)
+  - title: "키워드 구독과 이메일 알림"
+    labels: ["type: feature", "area: notify", "priority: P1", "size: 8"]
+    body: |
+      ## 사용자 스토리
+      재학생으로서, 구독한 키워드가 들어간 새 공지가 올라오면 바로 메일로 받고 싶다.
+
+      ## 완료 조건
+      - [ ] 키워드·제외 키워드·게시판 구독
+      - [ ] 새 공지 매칭 후 이메일 발송, 발송 로그
+      - [ ] 크기가 커서 Sprint 3 계획 때 쪼갤 것
+
+  - title: "마감일 추출과 .ics 캘린더 피드"
+    labels: ["type: feature", "area: notify", "priority: P2", "size: 8"]
+    body: |
+      ## 사용자 스토리
+      재학생으로서, 구독한 공지의 마감일이 내 캘린더에 자동으로 들어오면 좋겠다.
+
+      ## 완료 조건
+      - [ ] 본문에서 신청 기간·마감일 추출
+      - [ ] 사용자별 .ics 구독 URL
+      - [ ] D-3, D-1 리마인드

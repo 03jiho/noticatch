@@ -1,0 +1,83 @@
+# 라벨 체계. Bootstrap Backlog 워크플로우가 이 파일 기준으로 라벨을 만들고 맞춘다.
+# 접두어로 종류를 나눈다: type / area / priority / size
+
+labels:
+  # 이슈 종류
+  - name: "type: feature"
+    color: "1f6feb"
+    description: 새 기능
+  - name: "type: bug"
+    color: "d73a4a"
+    description: 잘못된 동작
+  - name: "type: docs"
+    color: "0e8a16"
+    description: 문서 작성·수정
+  - name: "type: design"
+    color: "5319e7"
+    description: 설계 (스키마, API 명세, 구조)
+  - name: "type: research"
+    color: "fbca04"
+    description: 조사·사용자 인터뷰
+  - name: "type: chore"
+    color: "c5def5"
+    description: 설정, CI, 저장소 관리
+
+  # 영역
+  - name: "area: crawler"
+    color: "bfdadc"
+    description: 공지 수집
+  - name: "area: backend"
+    color: "bfdadc"
+    description: FastAPI 서버, DB
+  - name: "area: frontend"
+    color: "bfdadc"
+    description: Next.js 웹
+  - name: "area: notify"
+    color: "bfdadc"
+    description: 이메일·웹 푸시·캘린더
+  - name: "area: infra"
+    color: "bfdadc"
+    description: GitHub Actions, 배포
+
+  # 우선순위
+  - name: "priority: P0"
+    color: "b60205"
+    description: 이번 스프린트에 반드시
+  - name: "priority: P1"
+    color: "d93f0b"
+    description: 이번 스프린트 목표
+  - name: "priority: P2"
+    color: "fef2c0"
+    description: 여유 있으면
+
+  # 스토리 포인트 (피보나치). Velocity, Burndown 계산에 쓴다.
+  - name: "size: 1"
+    color: "ededed"
+    description: 스토리 포인트 1 (반나절 이하)
+  - name: "size: 2"
+    color: "ededed"
+    description: 스토리 포인트 2
+  - name: "size: 3"
+    color: "ededed"
+    description: 스토리 포인트 3
+  - name: "size: 5"
+    color: "ededed"
+    description: 스토리 포인트 5
+  - name: "size: 8"
+    color: "ededed"
+    description: 스토리 포인트 8 (쪼개는 걸 고려)
+
+  # 기타
+  - name: "good first issue"
+    color: "7057ff"
+    description: 처음 기여하기 좋은 이슈
+  - name: "incident"
+    color: "000000"
+    description: 운영 장애 (DORA MTTR 계산에 사용)
+
+
+# GitHub 기본 라벨 중 위 체계와 겹치는 것은 삭제
+remove:
+  - bug
+  - enhancement
+  - documentation

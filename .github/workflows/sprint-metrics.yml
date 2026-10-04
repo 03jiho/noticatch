@@ -1,0 +1,55 @@
+# 스프린트(마일스톤) 단위로 Cycle Time, Velocity, Burndown 을 계산해 보고서와 차트를 갱신한다.
+name: Sprint Metrics
+
+on:
+  issues:
+    types: [closed, reopened, milestoned, demilestoned, labeled, unlabeled]
+  schedule:
+    - cron: "0 15 * * *"       # 매일 00:00 KST (번다운 날짜 갱신)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: sprint-metrics
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install matplotlib
+      - name: Analyze sprints
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/sprint_metrics.py >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload JSON artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprint-metrics-${{ github.run_number }}
+          path: |
+            metrics/sprint-latest.json
+            reports/sprint/LATEST.md
+            docs/images/burndown.png
+            docs/images/velocity.png
+          retention-days: 90
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add metrics reports docs/images README.md
+          if git diff --cached --quiet; then
+            echo "변경 없음"
+          else
+            git commit -m "chore(sprint): 스프린트 지표 자동 갱신 [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi

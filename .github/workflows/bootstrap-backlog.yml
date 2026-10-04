@@ -1,0 +1,30 @@
+# project/labels.yml, project/backlog.yml 기준으로 라벨·마일스톤·이슈를 만든다.
+# 수동 실행 전용. 같은 제목은 건너뛰므로 다시 실행해도 중복되지 않는다.
+name: Bootstrap Backlog
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "실제로 만들지 않고 계획만 출력"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Create labels, milestones, issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: python scripts/bootstrap_backlog.py
