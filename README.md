@@ -127,6 +127,6 @@ Next.js 웹 (타임라인 · 구독 설정)
 
 - [x] GitHub 계정 확인 (`03jiho`)
 - [x] 저장소 생성 (MIT 라이선스) 및 제안서 첫 커밋
-- [ ] Git 설치 및 사용자 정보 설정 (`git config --global user.name / user.email`)
-- [ ] SSH 키 생성(ed25519) 및 GitHub 등록, `ssh -T git@github.com` 인증 확인
-- [ ] SSH로 clone → 로컬 커밋 & 푸시
+- [x] Git 설치 및 사용자 정보 설정 (`git config --global user.name / user.email`)
+- [x] SSH 키 생성(ed25519) 및 GitHub 등록, `ssh -T git@github.com` 인증 확인
+- [x] SSH로 clone → 로컬 커밋 & 푸시
