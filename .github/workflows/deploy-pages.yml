@@ -1,0 +1,41 @@
+# 대시보드(dashboard/)를 GitHub Pages로 배포한다.
+# DORA 지표에서 "배포"의 기준이 되는 워크플로우다.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "metrics/**"
+      - "reports/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check dashboard files
+        run: test -f dashboard/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

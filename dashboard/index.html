@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NotiCatch DORA Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --border: rgba(11,11,11,0.10);
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7;
+    --s1: #2a78d6; --s2: #eb6834;
+    --good: #0ca30c; --good-text: #006300; --warn: #fab219; --serious: #ec835a; --critical: #d03b3b;
+    --banner: #fff4dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
+      --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835;
+      --s1: #3987e5; --s2: #d95926; --good-text: #0ca30c; --banner: #3a2f14;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
+    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835;
+    --s1: #3987e5; --s2: #d95926; --good-text: #0ca30c; --banner: #3a2f14;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 14px/1.5 system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-2); font-size: 13px; }
+  .toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .toggle a { padding: 6px 12px; color: var(--ink-2); text-decoration: none; font-size: 13px; }
+  .toggle a[aria-current="true"] { background: var(--ink); color: var(--surface); }
+  .banner { background: var(--banner); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; display: none; }
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+  .tile .label { color: var(--ink-2); font-size: 13px; }
+  .tile .value { font-size: 30px; font-weight: 650; margin: 6px 0 2px; letter-spacing: -0.02em; }
+  .tile .sub { color: var(--muted); font-size: 12px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+  .badge i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .card h2 { font-size: 14px; margin: 0 0 2px; }
+  .card p.desc { margin: 0 0 10px; color: var(--muted); font-size: 12px; }
+  .chart { position: relative; height: 220px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--muted); font-weight: 500; }
+  td a { color: var(--s1); }
+  .status { display: inline-flex; align-items: center; gap: 6px; }
+  footer { margin-top: 20px; color: var(--muted); font-size: 12px; }
+  footer a { color: var(--ink-2); }
+  @media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>DORA Metrics · NotiCatch</h1>
+      <div class="meta" id="meta">불러오는 중...</div>
+    </div>
+    <nav class="toggle" aria-label="데이터 선택">
+      <a href="?" id="tab-live">실제 데이터</a>
+      <a href="?demo=1" id="tab-demo">샘플 시안</a>
+    </nav>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>주간 배포 횟수</h2>
+      <p class="desc">Deploy 워크플로우의 main 브랜치 실행 결과</p>
+      <div class="chart"><canvas id="c-deploys" aria-label="주간 배포 횟수 차트"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>리드타임 중앙값</h2>
+      <p class="desc">커밋 시각부터 그 커밋이 배포 완료되기까지 (시간)</p>
+      <div class="chart"><canvas id="c-lead" aria-label="리드타임 차트"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>변경 실패율</h2>
+      <p class="desc">해당 주 배포 중 실패한 비율 (%)</p>
+      <div class="chart"><canvas id="c-cfr" aria-label="변경 실패율 차트"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>MTTR 중앙값</h2>
+      <p class="desc">실패 배포 → 다음 성공 배포, incident 이슈 open → close (시간)</p>
+      <div class="chart"><canvas id="c-mttr" aria-label="MTTR 차트"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <h2>최근 배포</h2>
+    <p class="desc">최근 10건</p>
+    <table>
+      <thead><tr><th>시각 (KST)</th><th>커밋</th><th>결과</th><th>리드타임</th><th>실행</th></tr></thead>
+      <tbody id="deploy-rows"></tbody>
+    </table>
+  </section>
+
+  <footer>
+    GitHub Actions(<code>dora-metrics.yml</code>)가 매주 월요일과 배포 직후 자동 수집 ·
+    <a href="https://github.com/03jiho/noticatch/blob/main/metrics/dora-latest.json">원본 JSON</a> ·
+    <a href="https://github.com/03jiho/noticatch/tree/main/reports/weekly">주간 보고서</a>
+  </footer>
+</main>
+
+<script>
+const LIVE_URL = "https://raw.githubusercontent.com/03jiho/noticatch/main/metrics/dora-latest.json";
+const demo = new URLSearchParams(location.search).has("demo");
+document.getElementById(demo ? "tab-demo" : "tab-live").setAttribute("aria-current", "true");
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const LEVEL = { Elite: "--good", High: "--s1", Medium: "--warn", Low: "--critical", "N/A": "--muted" };
+const LEVEL_KO = { Elite: "Elite", High: "High", Medium: "Medium", Low: "Low", "N/A": "판정 불가" };
+
+const fmtH = v => v == null ? "–" : v < 1 ? `${Math.round(v * 60)}분` : v < 48 ? `${v.toFixed(1)}시간` : `${(v / 24).toFixed(1)}일`;
+const fmtPct = v => v == null ? "–" : `${Math.round(v * 100)}%`;
+const kst = s => new Date(s).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+async function load() {
+  if (demo) return (await fetch("sample-data.json")).json();
+  try {
+    const r = await fetch(LIVE_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+function tiles(d) {
+  const m = d.metrics, lv = d.levels;
+  const items = [
+    ["Deployment Frequency", `주 ${m.deployment_frequency.per_week}회`, `최근 ${d.window_days}일 성공 배포 ${m.deployment_frequency.successful_deploys}회`, lv.deployment_frequency],
+    ["Lead Time for Changes", fmtH(m.lead_time_for_changes.median_h), `중앙값 · 커밋 ${m.lead_time_for_changes.samples}개`, lv.lead_time_for_changes],
+    ["Change Failure Rate", fmtPct(m.change_failure_rate.rate), `실패 ${m.change_failure_rate.failed} / 전체 ${m.change_failure_rate.total}`, lv.change_failure_rate],
+    ["MTTR", fmtH(m.mttr.median_h), `중앙값 · 복구 ${m.mttr.samples}건`, lv.mttr],
+  ];
+  document.getElementById("tiles").innerHTML = items.map(([label, value, sub, level]) => `
+    <div class="card tile">
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+      <div class="sub">${sub}</div>
+      <div class="badge"><i style="background:var(${LEVEL[level] || "--muted"})"></i>등급 ${LEVEL_KO[level] || level}</div>
+    </div>`).join("");
+}
+
+function baseOptions(unit) {
+  const ink2 = css("--ink-2"), muted = css("--muted"), grid = css("--grid"), axis = css("--axis");
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false, labels: { color: ink2, boxWidth: 10, boxHeight: 10, usePointStyle: true } },
+      tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y == null ? "데이터 없음" : c.parsed.y + unit}` } },
+    },
+    scales: {
+      x: { grid: { display: false }, border: { color: axis }, ticks: { color: muted } },
+      y: { beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { color: muted, precision: 0 } },
+    },
+  };
+}
+
+function lineChart(id, labels, label, data, unit) {
+  const s1 = css("--s1"), surface = css("--surface");
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: { labels, datasets: [{ label, data, borderColor: s1, backgroundColor: s1, borderWidth: 2,
+      pointRadius: 4, pointHoverRadius: 6, pointBorderColor: surface, pointBorderWidth: 2, spanGaps: true, tension: 0 }] },
+    options: baseOptions(unit),
+  });
+}
+
+function render(d) {
+  const w = d.weekly;
+  const labels = w.map(x => x.week.split("-")[1]);
+  tiles(d);
+
+  const opts = baseOptions("회");
+  opts.plugins.legend.display = true;
+  opts.plugins.legend.position = "top";
+  opts.plugins.legend.align = "end";
+  opts.scales.x.stacked = true; opts.scales.y.stacked = true;
+  new Chart(document.getElementById("c-deploys"), {
+    type: "bar",
+    data: { labels, datasets: [
+      { label: "성공", data: w.map(x => x.deploys), backgroundColor: css("--s1"), borderRadius: 4, borderSkipped: "bottom", borderColor: css("--surface"), borderWidth: { top: 2 }, maxBarThickness: 28 },
+      { label: "실패", data: w.map(x => x.failed), backgroundColor: css("--critical"), borderRadius: 4, borderSkipped: "bottom", borderColor: css("--surface"), borderWidth: { top: 2 }, maxBarThickness: 28 },
+    ] },
+    options: opts,
+  });
+  lineChart("c-lead", labels, "리드타임", w.map(x => x.lead_time_median_h), "시간");
+  lineChart("c-cfr", labels, "변경 실패율", w.map(x => x.change_failure_rate == null ? null : Math.round(x.change_failure_rate * 100)), "%");
+  lineChart("c-mttr", labels, "MTTR", w.map(x => x.mttr_median_h), "시간");
+
+  const rows = [...d.deployments].reverse().slice(0, 10).map(x => {
+    const ok = x.conclusion === "success";
+    const lead = x.lead_times_h.length ? fmtH(x.lead_times_h.slice().sort((a, b) => a - b)[Math.floor(x.lead_times_h.length / 2)]) : "–";
+    return `<tr><td>${kst(x.created_at)}</td><td><code>${x.sha}</code></td>
+      <td><span class="status"><i style="width:8px;height:8px;border-radius:50%;background:var(${ok ? "--good" : "--critical"})"></i>${ok ? "성공" : "실패"}</span></td>
+      <td>${lead}</td><td>${x.url && x.url !== "#" ? `<a href="${x.url}">보기</a>` : "–"}</td></tr>`;
+  });
+  document.getElementById("deploy-rows").innerHTML = rows.join("") || `<tr><td colspan="5">아직 배포 기록이 없습니다.</td></tr>`;
+
+  document.getElementById("meta").textContent =
+    `${d.repo} · 최근 ${d.window_days}일 · 갱신 ${new Date(d.generated_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST`;
+}
+
+load().then(d => {
+  const banner = document.getElementById("banner");
+  if (demo) {
+    banner.style.display = "block";
+    banner.textContent = "샘플 시안입니다. 실제 저장소 데이터가 아니라, 수집 스크립트를 가상의 배포 기록으로 돌린 결과예요.";
+  }
+  if (!d) {
+    banner.style.display = "block";
+    banner.textContent = "아직 수집된 지표가 없습니다. DORA Metrics 워크플로우가 한 번 실행되면 표시됩니다.";
+    document.getElementById("meta").textContent = "데이터 없음";
+    return;
+  }
+  if (!demo && d.deployments.length < 3) {
+    banner.style.display = "block";
+    banner.textContent = "배포 기록이 아직 적어서 지표가 의미 있는 수준은 아닙니다. 프로젝트가 진행되면서 쌓입니다.";
+  }
+  render(d);
+});
+</script>
+</body>
+</html>

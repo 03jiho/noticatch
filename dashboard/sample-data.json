@@ -1,0 +1,465 @@
+{
+  "generated_at": "2026-10-04T07:24:20+00:00",
+  "repo": "SAMPLE/demo",
+  "window_days": 30,
+  "deploy_workflow": "deploy-pages.yml",
+  "metrics": {
+    "deployment_frequency": {
+      "successful_deploys": 16,
+      "per_week": 3.73
+    },
+    "lead_time_for_changes": {
+      "median_h": 23.12,
+      "samples": 19
+    },
+    "change_failure_rate": {
+      "rate": 0.158,
+      "failed": 3,
+      "total": 19
+    },
+    "mttr": {
+      "median_h": 49.02,
+      "samples": 2
+    }
+  },
+  "levels": {
+    "deployment_frequency": "High",
+    "lead_time_for_changes": "Elite",
+    "change_failure_rate": "High",
+    "mttr": "Medium"
+  },
+  "weekly": [
+    {
+      "week": "2026-W33",
+      "start": "2026-08-10",
+      "deploys": 4,
+      "failed": 2,
+      "lead_time_median_h": 28.13,
+      "change_failure_rate": 0.333,
+      "mttr_median_h": 37.0
+    },
+    {
+      "week": "2026-W34",
+      "start": "2026-08-17",
+      "deploys": 3,
+      "failed": 2,
+      "lead_time_median_h": 16.5,
+      "change_failure_rate": 0.4,
+      "mttr_median_h": 47.13
+    },
+    {
+      "week": "2026-W35",
+      "start": "2026-08-24",
+      "deploys": 5,
+      "failed": 1,
+      "lead_time_median_h": 20.12,
+      "change_failure_rate": 0.167,
+      "mttr_median_h": 18.74
+    },
+    {
+      "week": "2026-W36",
+      "start": "2026-08-31",
+      "deploys": 3,
+      "failed": 1,
+      "lead_time_median_h": 25.48,
+      "change_failure_rate": 0.25,
+      "mttr_median_h": 47.4
+    },
+    {
+      "week": "2026-W37",
+      "start": "2026-09-07",
+      "deploys": 4,
+      "failed": 0,
+      "lead_time_median_h": 30.77,
+      "change_failure_rate": 0.0,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W38",
+      "start": "2026-09-14",
+      "deploys": 2,
+      "failed": 3,
+      "lead_time_median_h": 39.02,
+      "change_failure_rate": 0.6,
+      "mttr_median_h": 93.05
+    },
+    {
+      "week": "2026-W39",
+      "start": "2026-09-21",
+      "deploys": 5,
+      "failed": 0,
+      "lead_time_median_h": 19.95,
+      "change_failure_rate": 0.0,
+      "mttr_median_h": 5.0
+    },
+    {
+      "week": "2026-W40",
+      "start": "2026-09-28",
+      "deploys": 3,
+      "failed": 0,
+      "lead_time_median_h": 21.14,
+      "change_failure_rate": 0.0,
+      "mttr_median_h": null
+    }
+  ],
+  "deployments": [
+    {
+      "run_id": 9,
+      "sha": "3ceb3ff",
+      "conclusion": "failure",
+      "created_at": "2026-08-20T12:28:49.617408Z",
+      "finished_at": "2026-08-20T12:30:49.617408Z",
+      "lead_times_h": [],
+      "url": "#"
+    },
+    {
+      "run_id": 10,
+      "sha": "97b7509",
+      "conclusion": "success",
+      "created_at": "2026-08-21T12:31:17.414880Z",
+      "finished_at": "2026-08-21T12:33:17.414880Z",
+      "lead_times_h": [
+        81.61,
+        29.67,
+        8.08
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 11,
+      "sha": "8b529b4",
+      "conclusion": "success",
+      "created_at": "2026-08-23T02:45:52.965518Z",
+      "finished_at": "2026-08-23T02:47:52.965518Z",
+      "lead_times_h": [
+        15.56
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 12,
+      "sha": "2163636",
+      "conclusion": "failure",
+      "created_at": "2026-08-24T15:14:50.729499Z",
+      "finished_at": "2026-08-24T15:16:50.729499Z",
+      "lead_times_h": [],
+      "url": "#"
+    },
+    {
+      "run_id": 13,
+      "sha": "5eb561a",
+      "conclusion": "success",
+      "created_at": "2026-08-25T09:57:26.200539Z",
+      "finished_at": "2026-08-25T09:59:26.200539Z",
+      "lead_times_h": [
+        22.07,
+        17.71
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 14,
+      "sha": "ea7b5bf",
+      "conclusion": "success",
+      "created_at": "2026-08-26T10:17:34.550834Z",
+      "finished_at": "2026-08-26T10:19:34.550834Z",
+      "lead_times_h": [
+        18.71
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 15,
+      "sha": "9a9a80f",
+      "conclusion": "success",
+      "created_at": "2026-08-27T09:52:50.932647Z",
+      "finished_at": "2026-08-27T09:54:50.932647Z",
+      "lead_times_h": [
+        28.29
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 16,
+      "sha": "795b929",
+      "conclusion": "success",
+      "created_at": "2026-08-28T06:34:25.799454Z",
+      "finished_at": "2026-08-28T06:36:25.799454Z",
+      "lead_times_h": [
+        21.52
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 17,
+      "sha": "a02f34a",
+      "conclusion": "success",
+      "created_at": "2026-08-30T12:04:51.538625Z",
+      "finished_at": "2026-08-30T12:06:51.538625Z",
+      "lead_times_h": [
+        12.26
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 18,
+      "sha": "94b2b8f",
+      "conclusion": "failure",
+      "created_at": "2026-09-01T23:03:00.270076Z",
+      "finished_at": "2026-09-01T23:05:00.270076Z",
+      "lead_times_h": [],
+      "url": "#"
+    },
+    {
+      "run_id": 19,
+      "sha": "10c67fd",
+      "conclusion": "success",
+      "created_at": "2026-09-03T22:25:17.052091Z",
+      "finished_at": "2026-09-03T22:27:17.052091Z",
+      "lead_times_h": [
+        64.71,
+        20.1
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 20,
+      "sha": "9b08923",
+      "conclusion": "success",
+      "created_at": "2026-09-04T08:27:36.650610Z",
+      "finished_at": "2026-09-04T08:29:36.650610Z",
+      "lead_times_h": [
+        30.85
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 21,
+      "sha": "035efa2",
+      "conclusion": "success",
+      "created_at": "2026-09-05T22:15:27.106630Z",
+      "finished_at": "2026-09-05T22:17:27.106630Z",
+      "lead_times_h": [
+        13.27
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 22,
+      "sha": "e8a8529",
+      "conclusion": "success",
+      "created_at": "2026-09-07T18:24:46.399196Z",
+      "finished_at": "2026-09-07T18:26:46.399196Z",
+      "lead_times_h": [
+        23.65
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 23,
+      "sha": "d6645fa",
+      "conclusion": "success",
+      "created_at": "2026-09-09T02:08:08.037216Z",
+      "finished_at": "2026-09-09T02:10:08.037216Z",
+      "lead_times_h": [
+        37.88
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 24,
+      "sha": "781f9c5",
+      "conclusion": "success",
+      "created_at": "2026-09-10T10:47:19.245981Z",
+      "finished_at": "2026-09-10T10:49:19.245981Z",
+      "lead_times_h": [
+        3.4
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 25,
+      "sha": "4265064",
+      "conclusion": "success",
+      "created_at": "2026-09-12T07:15:58.552369Z",
+      "finished_at": "2026-09-12T07:17:58.552369Z",
+      "lead_times_h": [
+        39.76
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 26,
+      "sha": "8d0038e",
+      "conclusion": "success",
+      "created_at": "2026-09-14T10:00:22.872422Z",
+      "finished_at": "2026-09-14T10:02:22.872422Z",
+      "lead_times_h": [
+        16.08
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 27,
+      "sha": "3bfd1d3",
+      "conclusion": "failure",
+      "created_at": "2026-09-16T04:46:34.660836Z",
+      "finished_at": "2026-09-16T04:48:34.660836Z",
+      "lead_times_h": [],
+      "url": "#"
+    },
+    {
+      "run_id": 28,
+      "sha": "3116242",
+      "conclusion": "failure",
+      "created_at": "2026-09-16T21:30:53.317367Z",
+      "finished_at": "2026-09-16T21:32:53.317367Z",
+      "lead_times_h": [],
+      "url": "#"
+    },
+    {
+      "run_id": 29,
+      "sha": "fee2947",
+      "conclusion": "failure",
+      "created_at": "2026-09-18T21:27:46.532809Z",
+      "finished_at": "2026-09-18T21:29:46.532809Z",
+      "lead_times_h": [],
+      "url": "#"
+    },
+    {
+      "run_id": 30,
+      "sha": "b797038",
+      "conclusion": "success",
+      "created_at": "2026-09-20T01:47:32.317236Z",
+      "finished_at": "2026-09-20T01:49:32.317236Z",
+      "lead_times_h": [
+        112.06,
+        79.61,
+        39.02,
+        4.18
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 31,
+      "sha": "7863307",
+      "conclusion": "success",
+      "created_at": "2026-09-21T09:09:00.198694Z",
+      "finished_at": "2026-09-21T09:11:00.198694Z",
+      "lead_times_h": [
+        35.49
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 32,
+      "sha": "8a7d43b",
+      "conclusion": "success",
+      "created_at": "2026-09-23T11:45:09.384337Z",
+      "finished_at": "2026-09-23T11:47:09.384337Z",
+      "lead_times_h": [
+        11.89
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 33,
+      "sha": "d622567",
+      "conclusion": "success",
+      "created_at": "2026-09-24T17:20:52.892359Z",
+      "finished_at": "2026-09-24T17:22:52.892359Z",
+      "lead_times_h": [
+        35.52
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 34,
+      "sha": "8cb4a0d",
+      "conclusion": "success",
+      "created_at": "2026-09-27T03:09:00.173741Z",
+      "finished_at": "2026-09-27T03:11:00.173741Z",
+      "lead_times_h": [
+        7.91
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 35,
+      "sha": "79f248b",
+      "conclusion": "success",
+      "created_at": "2026-09-27T23:12:42.499210Z",
+      "finished_at": "2026-09-27T23:14:42.499210Z",
+      "lead_times_h": [
+        19.95
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 36,
+      "sha": "65aa9c8",
+      "conclusion": "success",
+      "created_at": "2026-09-29T13:50:46.419109Z",
+      "finished_at": "2026-09-29T13:52:46.419109Z",
+      "lead_times_h": [
+        1.19
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 37,
+      "sha": "a399f82",
+      "conclusion": "success",
+      "created_at": "2026-09-30T19:37:53.204120Z",
+      "finished_at": "2026-09-30T19:39:53.204120Z",
+      "lead_times_h": [
+        23.12
+      ],
+      "url": "#"
+    },
+    {
+      "run_id": 38,
+      "sha": "dc6bf1e",
+      "conclusion": "success",
+      "created_at": "2026-10-03T05:11:33.135778Z",
+      "finished_at": "2026-10-03T05:13:33.135778Z",
+      "lead_times_h": [
+        21.14
+      ],
+      "url": "#"
+    }
+  ],
+  "recoveries": [
+    {
+      "source": "failed_deploy",
+      "opened": "2026-08-12T01:15:15.333481+00:00",
+      "hours": 37.0
+    },
+    {
+      "source": "failed_deploy",
+      "opened": "2026-08-19T13:25:14.759007+00:00",
+      "hours": 47.13
+    },
+    {
+      "source": "failed_deploy",
+      "opened": "2026-08-24T15:14:50.729499+00:00",
+      "hours": 18.74
+    },
+    {
+      "source": "failed_deploy",
+      "opened": "2026-09-01T23:03:00.270076+00:00",
+      "hours": 47.4
+    },
+    {
+      "source": "failed_deploy",
+      "opened": "2026-09-16T04:46:34.660836+00:00",
+      "hours": 93.05
+    },
+    {
+      "source": "issue#12",
+      "opened": "2026-09-25T07:24:20.400128+00:00",
+      "hours": 5.0
+    }
+  ],
+  "sample": true
+}

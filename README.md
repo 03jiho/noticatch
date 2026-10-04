@@ -133,14 +133,55 @@ Next.js 웹 (타임라인 · 구독 설정)
 
 ---
 
-## 8. AI 활용 공개
+## 8. 2주차: DORA 메트릭 자동 수집
+
+GitHub Actions로 DORA 4대 지표를 자동으로 모으고, 대시보드와 주간 보고서로 보여준다.
+
+- **대시보드:** https://03jiho.github.io/noticatch/ (샘플 시안: [`?demo=1`](https://03jiho.github.io/noticatch/?demo=1))
+- **최신 주간 보고서:** [`reports/LATEST.md`](reports/LATEST.md) · **원본 JSON:** [`metrics/dora-latest.json`](metrics/dora-latest.json)
+
+### 구성
+
+| 파일 | 역할 |
+|---|---|
+| [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) | `main`에 push되면 대시보드를 GitHub Pages로 배포. DORA에서 말하는 "배포"의 기준 |
+| [`.github/workflows/dora-metrics.yml`](.github/workflows/dora-metrics.yml) | 매주 월요일 09:00(KST), 배포 직후, incident 이슈 종료 시 지표 수집 → JSON 아티팩트 업로드 → 보고서·README 자동 커밋 |
+| [`scripts/dora_metrics.py`](scripts/dora_metrics.py) | GitHub REST API로 배포 기록·커밋·이슈를 읽어 지표 계산 (표준 라이브러리만 사용) |
+| [`dashboard/index.html`](dashboard/index.html) | Chart.js 대시보드. 최신 JSON을 읽어서 그림 |
+
+### 지표 정의
+
+| 지표 | 이 저장소에서의 계산 방법 |
+|---|---|
+| Deployment Frequency | 최근 30일 동안 `Deploy` 워크플로우가 `main`에서 성공한 횟수 (주당 환산) |
+| Lead Time for Changes | 배포에 새로 포함된 각 커밋의 커밋 시각 → 배포 완료 시각, 중앙값 |
+| Change Failure Rate | 실패한 배포 / 전체 배포 (취소된 실행 제외) |
+| MTTR | ① 실패한 배포 → 다음 성공 배포, ② `incident` 라벨 이슈 open → close, 둘을 합친 중앙값 |
+
+등급(Elite/High/Medium/Low)은 DORA 보고서의 구간을 단순화한 참고용이다. 자동 갱신 커밋(`[skip ci]`)은 리드타임 계산에서 뺀다.
+
+### 현재 지표 (자동 갱신)
+
+<!-- DORA:START -->
+_아직 수집 전. `DORA Metrics` 워크플로우가 처음 실행되면 이 자리에 표가 채워진다._
+<!-- DORA:END -->
+
+### 대시보드
+
+샘플 시안 (가상의 배포 기록으로 수집 스크립트를 돌린 결과. 실제 데이터가 쌓이기 전 화면 구성을 보여주기 위한 용도):
+
+![DORA 대시보드 샘플 시안](docs/images/dashboard-sample.png)
+
+---
+
+## 9. AI 활용 공개
 
 본 과제는 생성형 AI의 도움을 받아 수행했으며, 수업 AI 활용 정책에 따라 아래와 같이 공개한다.
 
 | 항목 | 내용 |
 |---|---|
 | 도구 | Claude (Anthropic) — Claude 데스크톱 앱 Cowork 모드, Claude in Chrome 브라우저 연동 |
-| 사용 일시 | 2026년 10월 4일 |
+| 사용 일시 | 2026년 10월 4일 (1·2주차) |
 | 사용자 | 김지호 (2243577) |
 
 ### 입력 프롬프트 (요지 정리)
@@ -152,6 +193,8 @@ Next.js 웹 (타임라인 · 구독 설정)
 5. "Claude와 연동된 크롬 탭에 GitHub를 열어놨으니 직접 조작해서 저장소 생성과 제안서 업로드를 해줘."
 6. "SSH 키 설정과 푸시도 진행해줘."
 7. "AI 활용 공개 내용을 정리해서 추가해줘."
+8. "프로필 README는 이모지 빼고 사람이 쓴 것처럼 다시 써줘. 컴퓨터공학과이고 AI 에이전트를 활용한 바이브코딩에 관심 있다고 정리해줘." (1주차 선택 과제)
+9. 2주차 과제 공지(DORA 메트릭 수집 자동화) 전문을 붙여넣고 수행 도움을 요청
 
 ### 활용 범위
 
@@ -162,6 +205,8 @@ Next.js 웹 (타임라인 · 구독 설정)
 | 저장소 생성 | 브라우저 조작으로 `noticatch` 저장소 생성(MIT), README 첫 커밋 | 생성 설정 확인·승인 |
 | SSH 설정 | 명령어 안내, 공개키를 GitHub에 등록하는 양식 입력 | Git Bash에서 키 생성·명령 실행, GitHub 본인 인증(sudo) 승인 |
 | clone·커밋·푸시 | 명령어 안내 | 로컬에서 직접 실행 (`f50a835`) |
+| Profile README | 초안 작성, 웹 편집기로 `03jiho/03jiho` 저장소에 커밋 | 학과·관심 분야 제시, 문체 수정 요청 |
+| 2주차 DORA | 수집 스크립트·워크플로우·대시보드 작성, 가상 데이터로 로직 테스트, 샘플 화면 캡처 | 저장소 위치·진행 방식 결정, 로컬에서 커밋·푸시, Pages 설정 승인 |
 
 ### 정보 검증
 
