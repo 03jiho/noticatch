@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-04T18:29:04+00:00",
+  "generated_at": "2026-10-05T21:44:45+00:00",
   "repo": "03jiho/noticatch",
   "sprints": [
     {
@@ -27,7 +27,7 @@
         {
           "date": "2026-10-06",
           "ideal": 16.08,
-          "remaining": null
+          "remaining": 18
         },
         {
           "date": "2026-10-07",
