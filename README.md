@@ -220,7 +220,7 @@ _마지막 자동 갱신: 2026-10-06 14:45 KST · [주간 보고서](reports/wee
 - **Cycle Time**: 담당자 지정(작업 시작) → 이슈 종료
 
 <!-- SPRINT:START -->
-_마지막 자동 갱신: 2026-10-10 04:56 KST · [분석 보고서](reports/sprint/LATEST.md) · [JSON](metrics/sprint-latest.json)_
+_마지막 자동 갱신: 2026-10-11 04:04 KST · [분석 보고서](reports/sprint/LATEST.md) · [JSON](metrics/sprint-latest.json)_
 
 | 스프린트 | 기간 | 상태 | 이슈 (완료/전체) | 포인트 (완료/계획) | Cycle Time 중앙값 |
 |---|---|---|---|---|---|
