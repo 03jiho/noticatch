@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-16T18:32:47+00:00",
+  "generated_at": "2026-10-17T17:39:57+00:00",
   "repo": "03jiho/noticatch",
   "sprints": [
     {
       "title": "Sprint 1 · 요구사항·설계",
       "start": "2026-10-04",
       "end": "2026-10-17",
-      "status": "active",
+      "status": "closed",
       "committed_points": 19,
       "completed_points": 1,
       "issues_total": 9,
@@ -166,7 +166,7 @@
       "title": "Sprint 2 · 크롤러·API v1",
       "start": "2026-10-18",
       "end": "2026-10-31",
-      "status": "planned",
+      "status": "active",
       "committed_points": 19,
       "completed_points": 0,
       "issues_total": 6,
@@ -177,7 +177,7 @@
         {
           "date": "2026-10-18",
           "ideal": 19.0,
-          "remaining": null
+          "remaining": 19
         },
         {
           "date": "2026-10-19",
@@ -298,9 +298,9 @@
     }
   ],
   "summary": {
-    "current_sprint": "Sprint 1 · 요구사항·설계",
+    "current_sprint": "Sprint 2 · 크롤러·API v1",
     "average_velocity": 1,
-    "velocity_basis": "진행 중 스프린트의 현재까지 완료분",
+    "velocity_basis": "완료된 스프린트 평균",
     "cycle_time_median_h": 0.1,
     "cycle_time_samples": 1
   }
