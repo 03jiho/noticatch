@@ -220,14 +220,14 @@ _마지막 자동 갱신: 2026-10-26 12:23 KST · [주간 보고서](reports/wee
 - **Cycle Time**: 담당자 지정(작업 시작) → 이슈 종료
 
 <!-- SPRINT:START -->
-_마지막 자동 갱신: 2026-10-31 04:48 KST · [분석 보고서](reports/sprint/LATEST.md) · [JSON](metrics/sprint-latest.json)_
+_마지막 자동 갱신: 2026-11-01 03:56 KST · [분석 보고서](reports/sprint/LATEST.md) · [JSON](metrics/sprint-latest.json)_
 
 | 스프린트 | 기간 | 상태 | 이슈 (완료/전체) | 포인트 (완료/계획) | Cycle Time 중앙값 |
 |---|---|---|---|---|---|
 | Sprint 1 · 요구사항·설계 | 2026-10-04 ~ 2026-10-17 | 종료 | 1/9 | 1/19 | 0.1시간 |
-| Sprint 2 · 크롤러·API v1 | 2026-10-18 ~ 2026-10-31 | 진행 중 | 0/6 | 0/19 | - |
+| Sprint 2 · 크롤러·API v1 | 2026-10-18 ~ 2026-10-31 | 종료 | 0/6 | 0/19 | - |
 
-Velocity **1 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0.1시간** (n=1)
+Velocity **0.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0.1시간** (n=1)
 
 ![Burndown](docs/images/burndown.png)
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-30T19:48:01+00:00",
+  "generated_at": "2026-10-31T18:56:42+00:00",
   "repo": "03jiho/noticatch",
   "sprints": [
     {
@@ -166,7 +166,7 @@
       "title": "Sprint 2 · 크롤러·API v1",
       "start": "2026-10-18",
       "end": "2026-10-31",
-      "status": "active",
+      "status": "closed",
       "committed_points": 19,
       "completed_points": 0,
       "issues_total": 6,
@@ -298,8 +298,8 @@
     }
   ],
   "summary": {
-    "current_sprint": "Sprint 2 · 크롤러·API v1",
-    "average_velocity": 1,
+    "current_sprint": null,
+    "average_velocity": 0.5,
     "velocity_basis": "완료된 스프린트 평균",
     "cycle_time_median_h": 0.1,
     "cycle_time_samples": 1
