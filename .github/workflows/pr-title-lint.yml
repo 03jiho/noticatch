@@ -1,0 +1,33 @@
+# PR 제목이 Conventional Commits 형식인지 검사한다. (type(scope)!: 설명)
+# Squash and merge 때 PR 제목이 그대로 커밋 메시지가 되므로 제목을 검사한다.
+name: PR Title Lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Conventional Commits format
+        env:
+          # 제목을 셸에 직접 끼워 넣지 않고 환경변수로 받아 명령 주입을 막는다.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert)(\([a-z0-9._/-]+\))?!?: .{1,72}$'
+          if printf '%s' "$PR_TITLE" | grep -Eq "$pattern"; then
+            echo "OK: $PR_TITLE"
+          else
+            {
+              echo "PR 제목이 Conventional Commits 형식이 아닙니다."
+              echo "  현재: $PR_TITLE"
+              echo "  형식: type(scope): 설명   (설명은 72자 이내)"
+              echo "  type: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert"
+              echo "  예시: feat(crawler): 학과 게시판 크롤러 추가"
+            } >&2
+            exit 1
+          fi
