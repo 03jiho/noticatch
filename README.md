@@ -167,9 +167,9 @@ _마지막 자동 갱신: 2026-11-05 14:30 KST · [주간 보고서](reports/wee
 
 | 지표 | 최근 30일 | 등급(참고) |
 |---|---|---|
-| Deployment Frequency | 4회 (주 0.93회) | Medium |
-| Lead Time for Changes | 1분 (중앙값, n=4) | Elite |
-| Change Failure Rate | 0% (0/4) | Elite |
+| Deployment Frequency | 5회 (주 1.17회) | High |
+| Lead Time for Changes | 1분 (중앙값, n=5) | Elite |
+| Change Failure Rate | 0% (0/5) | Elite |
 | MTTR | 데이터 없음 (중앙값, n=0) | N/A |
 <!-- DORA:END -->
 
