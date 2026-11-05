@@ -1,0 +1,36 @@
+# PR 제목이 Conventional Commits 형식인지 검사한다. (type(scope)!: 설명)
+# Squash and merge 때 PR 제목이 그대로 커밋 메시지가 되므로 제목을 검사한다.
+# 한글 제목의 글자 수(72자)를 로케일과 무관하게 세려고 grep 대신 파이썬을 쓴다.
+name: PR Title Lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Conventional Commits format
+        env:
+          # 제목을 셸에 직접 끼워 넣지 않고 환경변수로 받아 명령 주입을 막는다.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 - <<'PY'
+          import os, re, sys
+          title = os.environ["PR_TITLE"]
+          types = "feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert"
+          pattern = rf"({types})(\([a-z0-9._/-]+\))?!?: .{{1,72}}"
+          if re.fullmatch(pattern, title):
+              print(f"OK: {title}")
+              sys.exit(0)
+          print("PR 제목이 Conventional Commits 형식이 아닙니다.", file=sys.stderr)
+          print(f"  현재: {title}", file=sys.stderr)
+          print("  형식: type(scope): 설명   (설명은 72자 이내)", file=sys.stderr)
+          print(f"  type: {', '.join(types.split('|'))}", file=sys.stderr)
+          print("  예시: feat(crawler): 학과 게시판 크롤러 추가", file=sys.stderr)
+          sys.exit(1)
+          PY
