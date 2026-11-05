@@ -265,4 +265,11 @@ Velocity **0.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0
 
 - 학생·교내 프로젝트이고 다른 학과·학교가 쉽게 가져다 쓰는 것이 목표라서, 조건이 가장 단순한 허용형 라이선스를 골랐다.
 - 특허 조항이 필요한 규모가 아니고, 파생물에 같은 라이선스를 강제할 이유도 없다.
-- 이 선택은 선택 과제(라이선스 비교)에서 더 자세히 정리할 수 있다.
+- 8개 라이선스를 비교하고 의존성 호환성까지 점검한 과정은 [라이선스 비교 분석](docs/open-source/license-comparison.md)에 정리했다.
+
+### 선택 과제
+
+| 문서 | 내용 |
+|---|---|
+| [라이선스 비교 분석과 선택 기준](docs/open-source/license-comparison.md) | MIT, BSD, Apache, MPL, LGPL, GPL, AGPL, Unlicense 비교, NotiCatch 의존성 호환성, MIT 선택 근거와 재검토 조건 |
+| [Inner Source 도입 로드맵](docs/open-source/inner-source-roadmap.md) | 4단계 로드맵, 역할, 성공 지표, 위험과 대응, NotiCatch 파일럿에서 갖춘 요소와 한계 |
