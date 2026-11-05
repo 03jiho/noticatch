@@ -1,0 +1,196 @@
+# 비동기 협업 자동화 (초안)
+#  1) auto-reply     : 새 이슈/토론에 1차 응답 안내 댓글
+#  2) sla-check      : 1차 응답 SLA를 넘긴 이슈에 라벨과 댓글, 응답 없는 토론은 요약에 표시
+#  3) weekly-summary : 지난 7일 활동을 요약한 이슈를 매주 월요일에 생성
+#
+# 초안이라 SLA는 "영업일"이 아니라 경과 시간(SLA_HOURS) 기준이다.
+# 이슈/토론 제목·본문은 스크립트에 문자열로 끼워 넣지 않고 context 객체로만 읽는다.
+name: Collab Automation
+
+on:
+  issues:
+    types: [opened]
+  discussion:
+    types: [created]
+  schedule:
+    - cron: "0 0 * * *"        # 매일 09:00 KST: SLA 점검
+    - cron: "0 0 * * 1"        # 매주 월요일 09:00 KST: 주간 요약
+  workflow_dispatch:           # 수동 실행: SLA 점검 + 주간 요약
+
+permissions: {}
+
+env:
+  SLA_HOURS: "48"              # 1차 응답 목표 시간
+
+jobs:
+  auto-reply:
+    if: github.event_name == 'issues' || github.event_name == 'discussion'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      discussions: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const isDiscussion = context.eventName === 'discussion';
+            const item = isDiscussion ? context.payload.discussion : context.payload.issue;
+            if (!item || !item.user || item.user.type === 'Bot') return core.info('봇이 작성함, 건너뜀');
+            if (item.author_association === 'OWNER') return core.info('저장소 소유자가 작성함, 건너뜀');
+
+            const kind = isDiscussion ? '토론' : '이슈';
+            const body = [
+              `${kind}를 남겨 주셔서 감사합니다.`,
+              '',
+              `- **1차 응답 목표:** ${process.env.SLA_HOURS}시간 이내`,
+              '- 재현 방법, 기대한 결과, 실제 결과를 적어 주시면 더 빨리 확인할 수 있습니다.',
+              '- 서비스 장애처럼 급한 문제는 `incident` 라벨을 요청해 주세요.',
+              '- 기여 방법은 [Wiki](https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/wiki)를 참고해 주세요.',
+              '',
+              '_이 댓글은 자동으로 작성되었습니다._',
+            ].join('\n');
+
+            if (isDiscussion) {
+              await github.graphql(
+                `mutation($id: ID!, $body: String!) {
+                   addDiscussionComment(input: {discussionId: $id, body: $body}) { comment { id } }
+                 }`,
+                { id: item.node_id, body },
+              );
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: item.number, body });
+            }
+
+  sla-check:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 * * *'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      discussions: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const slaMs = Number(process.env.SLA_HOURS) * 3600 * 1000;
+            const now = Date.now();
+            const label = 'sla: breached';
+
+            try {
+              await github.rest.issues.createLabel({
+                ...context.repo, name: label, color: 'b60205',
+                description: '1차 응답 SLA를 넘긴 이슈',
+              });
+            } catch (e) { if (e.status !== 422) throw e; }   // 이미 있으면 무시
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo, state: 'open', per_page: 100,
+            });
+            const breached = [];
+            for (const i of issues) {
+              if (i.pull_request) continue;                         // PR 제외
+              if (i.comments > 0) continue;                         // 이미 응답함
+              if (i.user.type === 'Bot' || i.author_association === 'OWNER') continue;
+              if (i.labels.some(l => l.name === label)) continue;   // 이미 표시함
+              if (now - Date.parse(i.created_at) < slaMs) continue;
+              await github.rest.issues.addLabels({ ...context.repo, issue_number: i.number, labels: [label] });
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number: i.number,
+                body: `1차 응답 목표(${process.env.SLA_HOURS}시간)를 넘겼습니다. 담당자는 확인해 주세요.`,
+              });
+              breached.push(i);
+            }
+
+            let staleDiscussions = [];
+            let discussionNote = '';
+            try {
+              const res = await github.graphql(
+                `query($owner: String!, $name: String!) {
+                   repository(owner: $owner, name: $name) {
+                     discussions(first: 50, orderBy: {field: CREATED_AT, direction: DESC}) {
+                       nodes { number title url createdAt author { login } comments { totalCount } }
+                     }
+                   }
+                 }`,
+                { owner: context.repo.owner, name: context.repo.repo },
+              );
+              staleDiscussions = res.repository.discussions.nodes.filter(d =>
+                d.comments.totalCount === 0 && (now - Date.parse(d.createdAt)) >= slaMs &&
+                d.author && d.author.login !== context.repo.owner);
+            } catch (e) { discussionNote = `토론 조회 실패(Discussions가 꺼져 있을 수 있음): ${e.message}`; }
+
+            core.summary.addHeading('SLA 점검 결과');
+            core.summary.addRaw(`\n- 이슈 SLA 초과: **${breached.length}건**\n- 응답 없는 토론: **${staleDiscussions.length}건**\n`);
+            if (breached.length) core.summary.addList(breached.map(i => `#${i.number} ${i.title}`));
+            if (staleDiscussions.length) core.summary.addList(staleDiscussions.map(d => `[#${d.number}](${d.url}) ${d.title}`));
+            if (discussionNote) core.summary.addRaw(`\n${discussionNote}\n`);
+            await core.summary.write();
+
+  weekly-summary:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 * * 1'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      discussions: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = `${context.repo.owner}/${context.repo.repo}`;
+            const sinceDate = new Date(Date.now() - 7 * 86400000);
+            const since = sinceDate.toISOString().slice(0, 10);
+
+            // ISO 주차 (목요일 기준)
+            const t = new Date(Date.UTC(sinceDate.getUTCFullYear(), sinceDate.getUTCMonth(), sinceDate.getUTCDate()));
+            t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+            const week = Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+            const title = `주간 요약 ${t.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+
+            const dup = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${repo} is:issue in:title "${title}"`, per_page: 1,
+            });
+            if (dup.data.total_count > 0) return core.info(`이미 있음: ${title}`);
+
+            const count = async q => (await github.rest.search.issuesAndPullRequests({
+              q: `repo:${repo} ${q}`, per_page: 1,
+            })).data.total_count;
+
+            const opened = await count(`is:issue created:>=${since}`);
+            const closed = await count(`is:issue closed:>=${since}`);
+            const prOpened = await count(`is:pr created:>=${since}`);
+            const prMerged = await count(`is:pr is:merged merged:>=${since}`);
+            const openNow = await count('is:issue is:open');
+            const breached = await count('is:issue is:open label:"sla: breached"');
+
+            let discussionLine = '비활성 또는 조회 실패';
+            try {
+              const res = await github.graphql(
+                `query($owner: String!, $name: String!) {
+                   repository(owner: $owner, name: $name) {
+                     discussions(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { createdAt } }
+                   }
+                 }`,
+                { owner: context.repo.owner, name: context.repo.repo },
+              );
+              discussionLine = `${res.repository.discussions.nodes.filter(d => d.createdAt.slice(0, 10) >= since).length}건`;
+            } catch (e) { core.info(`토론 조회 실패: ${e.message}`); }
+
+            const body = [
+              `기간: ${since} 이후 7일 (자동 생성)`,
+              '',
+              '| 항목 | 값 |',
+              '|---|---|',
+              `| 새 이슈 | ${opened} |`,
+              `| 닫힌 이슈 | ${closed} |`,
+              `| 열린 PR | ${prOpened} |`,
+              `| 머지된 PR | ${prMerged} |`,
+              `| 새 토론 | ${discussionLine} |`,
+              `| 현재 열린 이슈 | ${openNow} |`,
+              `| SLA 초과로 표시된 이슈 | ${breached} |`,
+              '',
+              '지표 상세는 [대시보드](https://' + context.repo.owner + '.github.io/' + context.repo.repo + '/)와 `reports/` 폴더를 참고하세요.',
+            ].join('\n');
+
+            const created = await github.rest.issues.create({
+              ...context.repo, title, body, labels: ['type: chore'],
+            });
+            core.info(`생성: ${created.data.html_url}`);
