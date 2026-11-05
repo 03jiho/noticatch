@@ -7,7 +7,7 @@
 | 과목 | OSS기반SW프로그래밍 |
 | 작성자 | 김지호 (2243577) · [@03jiho](https://github.com/03jiho) |
 | 라이선스 | MIT |
-| 상태 | 제안 단계 (1주차) |
+| 상태 | 설계·협업 체계 구축 중 (6주차 기준, 기능 구현 전) |
 
 ---
 
@@ -241,3 +241,28 @@ Velocity **0.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0
 - 푸시 결과는 GitHub 커밋 기록에서 확인했다.
 - 제안서에 들어간 기술 스택과 일정은 AI가 만든 초안이므로, 실제 구현 가능성과 학교 게시판의 크롤링 허용 여부(robots.txt·이용약관)는 2주차 사용자 조사 단계에서 직접 확인할 예정이다.
 - 문제정의에 실제 사용자 수치는 넣지 않았다. 근거 데이터는 인터뷰·설문 결과로 채울 예정이다.
+
+---
+
+## 10. 6주차: 오픈소스 기본 구조
+
+공개 저장소에 외부 기여자가 필요로 하는 기본 문서를 갖췄다.
+
+| 파일 | 역할 |
+|---|---|
+| [`LICENSE`](LICENSE) | MIT 라이선스. 사용·수정·재배포가 자유롭고 저작권 고지만 유지하면 된다 |
+| [`README.md`](README.md) | 문제 정의, 핵심 기능, 구조, 마일스톤, 주차별 기록 (이 문서) |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 기여 방법: 개발 환경, 브랜치·커밋·PR 규칙, 리뷰 태그(`[MUST]`/`[SHOULD]`), 크롤러 기여 규칙 |
+| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | 행동강령 (Contributor Covenant 2.0 기반, 신고 창구 포함) |
+
+함께 쓰는 협업 도구:
+
+- [Issue 템플릿](.github/ISSUE_TEMPLATE) · [PR 템플릿](.github/pull_request_template.md) · [`good first issue` 라벨](https://github.com/03jiho/noticatch/labels/good%20first%20issue)
+- [Wiki](https://github.com/03jiho/noticatch/wiki): 시작하기, 개발 가이드, 문제 해결
+- [Discussions](https://github.com/03jiho/noticatch/discussions): 질문(Q&A), 설계 제안(RFC)
+
+### 라이선스를 MIT로 정한 이유
+
+- 학생·교내 프로젝트이고 다른 학과·학교가 쉽게 가져다 쓰는 것이 목표라서, 조건이 가장 단순한 허용형 라이선스를 골랐다.
+- 특허 조항이 필요한 규모가 아니고, 파생물에 같은 라이선스를 강제할 이유도 없다.
+- 이 선택은 선택 과제(라이선스 비교)에서 더 자세히 정리할 수 있다.
