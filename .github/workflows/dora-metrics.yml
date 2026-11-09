@@ -29,9 +29,9 @@ jobs:
         with:
           ref: main
 
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup-python-env
         with:
-          python-version: "3.12"
+          requirements: ""   # 표준 라이브러리만 쓴다
 
       - name: Collect DORA metrics
         env:

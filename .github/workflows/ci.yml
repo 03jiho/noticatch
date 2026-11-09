@@ -1,17 +1,19 @@
-# CI/CD 파이프라인: Lint → Test(매트릭스) → Build → Deploy
+# CI/CD 파이프라인: 변경 감지 → Lint → Test(matrix) → Build → Deploy
 #
-#   lint ──▶ test (3 OS × 3 Python = 9개 조합) ──▶ build ──▶ deploy
-#                      │                             │          ▲
-#                      └ junit 결과 아티팩트 업로드    └ dist 아티팩트 업로드 ─┘ 다운로드
+#   changes ─▶ lint ─▶ test-pr  (PR: 작은 matrix)  ─┐
+#      │              test-full (main/태그: 전체 matrix) ─┴▶ build ─▶ deploy
+#      └ 무엇이 바뀌었는지 보고 필요한 단계만 실행한다.
 #
-# - PR: lint, test, build 까지 실행 (deploy 는 건너뜀)
-# - main 에 push: deploy 까지 실행 (아티팩트를 내려받아 무결성 검증 후 스모크 테스트)
-# - v* 태그 push: deploy 에서 GitHub Release 를 만들고 번들을 첨부
+# 7주차에 만든 파이프라인을 8주차에 다음처럼 최적화했다. 전후 비교는 docs/ci/optimization-report.md
+#  - 재사용: setup-python + pip 캐시 + 설치를 Composite Action(.github/actions/setup-python-env)으로,
+#            matrix 테스트를 Reusable Workflow(.github/workflows/python-tests.yml)로 묶었다.
+#  - 캐싱:   Composite Action 안에서 pip 캐시를 쓴다. 효과는 cache-benchmark.yml 로 측정한다.
+#  - 조건부: scripts/changed_paths.py 가 변경 파일을 보고 lint·test·build 실행 여부를 정한다.
+#            문서만 바뀐 PR 은 무거운 단계를 건너뛴다. deploy 는 main 과 v* 태그 push(또는 수동 지정)에서만 실행한다.
 #
 # Secrets
 # - secrets.GITHUB_TOKEN : Actions 가 자동으로 만들어 주는 토큰. 릴리스 생성에만 쓴다.
 # - secrets.NOTIFY_WEBHOOK_URL : (선택) 배포 알림을 받을 웹훅 주소. 없으면 알림만 건너뛴다.
-#   저장소 Settings → Secrets and variables → Actions 에서 등록한다. 값은 로그에 마스킹된다.
 #
 # 참고: 지표 계산이 "배포"로 보는 워크플로우는 deploy-pages.yml 이다. 이 파일의 deploy 작업은
 #       DORA 배포 지표에 영향을 주지 않는다.
@@ -23,6 +25,11 @@ on:
     branches: [main]
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: "deploy 까지 실행해 본다 (릴리스는 만들지 않음. 태그 push 때만 릴리스)"
+        type: boolean
+        default: false
 
 # 같은 브랜치에서 새 커밋이 오면 이전 PR 검사는 취소한다. main/태그는 끝까지 실행한다.
 concurrency:
@@ -34,61 +41,80 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      test: ${{ steps.detect.outputs.test }}
+      build: ${{ steps.detect.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 변경 파일 비교에 기준 커밋이 필요하다.
+      - id: detect
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' || github.ref_type == 'tag' }}
+        run: |
+          args=()
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          python3 scripts/changed_paths.py --base "$BASE" --head "$HEAD" "${args[@]}" \
+            --github-output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
+
   lint:
     name: Lint (ruff)
+    needs: changes
+    if: ${{ needs.changes.outputs.test == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: requirements-dev.txt
-      - run: python -m pip install -r requirements-dev.txt
+      - uses: ./.github/actions/setup-python-env
       - name: ruff check
         run: ruff check . --output-format=github
 
-  test:
-    name: Test (${{ matrix.os }}, py${{ matrix.python-version }})
-    needs: lint
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    strategy:
-      # 한 조합이 실패해도 나머지 결과를 끝까지 보기 위해 fail-fast 를 끈다.
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.11", "3.12", "3.13"]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: requirements-dev.txt
-      - run: python -m pip install -r requirements-dev.txt
-      - name: pytest
-        run: python -m pytest --junitxml=test-results/junit.xml
-      - name: Upload test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: test-results/junit.xml
-          if-no-files-found: error
-          retention-days: 7
+  # PR 에서는 빠른 피드백을 위해 작은 matrix 만 돌린다. (ubuntu 3개 버전 + Windows·macOS 각 1개)
+  test-pr:
+    name: test-pr
+    needs: [changes, lint]
+    if: ${{ github.event_name == 'pull_request' && needs.changes.outputs.test == 'true' }}
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      matrix: >-
+        {"os": ["ubuntu-latest"],
+         "python-version": ["3.11", "3.12", "3.13"],
+         "include": [
+           {"os": "windows-latest", "python-version": "3.12"},
+           {"os": "macos-latest", "python-version": "3.12"}]}
+
+  # main·태그·수동 실행에서는 전체 matrix(3 OS × 3 버전)에 아직 정식이 아닌 3.14 를 참고용으로 더한다.
+  # 3.14 는 experimental 이라 실패해도 전체 결과를 막지 않는다.
+  test-full:
+    name: test-full
+    needs: [changes, lint]
+    if: ${{ github.event_name != 'pull_request' && needs.changes.outputs.test == 'true' }}
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      matrix: >-
+        {"os": ["ubuntu-latest", "windows-latest", "macos-latest"],
+         "python-version": ["3.11", "3.12", "3.13"],
+         "include": [
+           {"os": "ubuntu-latest", "python-version": "3.14", "experimental": true}]}
 
   build:
     name: Build bundle
-    needs: test
+    needs: [changes, test-pr, test-full]
+    # 테스트가 건너뛰어진 경우(번들 파일만 바뀜)에도 실행하되, 테스트가 실패하면 실행하지 않는다.
+    if: ${{ !cancelled() && needs.changes.outputs.build == 'true' && !contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup-python-env
         with:
-          python-version: "3.12"
+          requirements: ""   # 번들 생성은 표준 라이브러리만 쓴다.
       - name: Build zip + manifest
         env:
           # 브랜치·태그 이름은 셸에 직접 끼워 넣지 않고 환경변수로 받는다.
@@ -108,17 +134,19 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    # PR 과 수동 실행에서는 배포하지 않는다. main 또는 v* 태그 push 일 때만 실행한다.
-    if: ${{ github.event_name == 'push' }}
+    # 배포 조건: main 또는 v* 태그 push, 또는 수동 실행에서 deploy 를 켠 경우. PR 에서는 배포하지 않는다.
+    if: >-
+      ${{ !cancelled() && needs.build.result == 'success' &&
+      (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write  # 태그 push 일 때 릴리스를 만들기 위해서만 필요하다.
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup-python-env
         with:
-          python-version: "3.12"
+          requirements: ""
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:

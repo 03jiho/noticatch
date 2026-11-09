@@ -1,0 +1,45 @@
+# Reusable Workflow: 주어진 matrix(OS × Python 버전)로 pytest 를 실행하고 결과를 아티팩트로 올린다.
+# ci.yml 이 PR 용(작은 matrix)과 main/태그 용(전체 matrix)으로 같은 정의를 두 번 호출한다.
+name: Python Tests
+
+on:
+  workflow_call:
+    inputs:
+      matrix:
+        description: 'strategy.matrix 로 쓸 JSON 문자열 (예: {"os":["ubuntu-latest"],"python-version":["3.12"]})'
+        type: string
+        required: true
+      artifact-prefix:
+        description: 테스트 결과 아티팩트 이름의 접두사
+        type: string
+        default: test-results
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    # matrix 항목에 experimental: true 가 있으면 실패해도 전체 결과를 막지 않는다.
+    continue-on-error: ${{ matrix.experimental == true }}
+    strategy:
+      # 한 조합이 실패해도 나머지 결과를 끝까지 본다.
+      fail-fast: false
+      matrix: ${{ fromJSON(inputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: pytest
+        run: python -m pytest --junitxml=test-results/junit.xml
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: test-results/junit.xml
+          if-no-files-found: error
+          retention-days: 7

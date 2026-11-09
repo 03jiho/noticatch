@@ -87,3 +87,62 @@ def test_workflow_is_valid_and_least_privilege(path):
     triggers = doc.get("on", doc.get(True))
     names = triggers if isinstance(triggers, list | dict) else [triggers]
     assert "pull_request_target" not in names, "포크 PR 에 비밀값이 노출될 수 있어 쓰지 않는다"
+
+
+def local_uses(doc) -> list[str]:
+    """워크플로우 안의 `uses: ./...` 참조(Composite Action, Reusable Workflow)를 모은다."""
+    found = []
+    for job in doc["jobs"].values():
+        if str(job.get("uses", "")).startswith("./"):
+            found.append(job["uses"])
+        for step in job.get("steps", []):
+            if str(step.get("uses", "")).startswith("./"):
+                found.append(step["uses"])
+    return found
+
+
+@pytest.mark.parametrize("path", WORKFLOWS, ids=lambda p: p.name)
+def test_local_action_and_workflow_references_exist(path):
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    for ref in local_uses(doc):
+        target = ROOT / ref.removeprefix("./")
+        assert target.exists() and (target.is_file() or (target / "action.yml").is_file()), f"{path.name}: {ref}"
+
+
+def test_composite_actions_are_valid():
+    actions = sorted((ROOT / ".github" / "actions").glob("*/action.yml"))
+    assert actions, "Composite Action 이 있어야 한다"
+    for a in actions:
+        doc = yaml.safe_load(a.read_text(encoding="utf-8"))
+        assert doc["runs"]["using"] == "composite", a
+        assert doc.get("name") and doc.get("description"), a
+        for step in doc["runs"]["steps"]:
+            if "run" in step:
+                assert step.get("shell"), f"composite 의 run 단계에는 shell 이 필요하다: {a}"
+
+
+def test_reusable_workflow_is_callable_and_used():
+    reusable = yaml.safe_load((ROOT / ".github/workflows/python-tests.yml").read_text(encoding="utf-8"))
+    triggers = reusable.get("on", reusable.get(True))
+    assert "workflow_call" in triggers and "matrix" in triggers["workflow_call"]["inputs"]
+    ci = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    callers = [name for name, j in ci["jobs"].items() if j.get("uses") == "./.github/workflows/python-tests.yml"]
+    assert len(callers) >= 2, "PR 용과 전체 matrix 용으로 재사용되어야 한다"
+
+
+def test_setup_steps_are_not_duplicated_in_workflows():
+    """setup-python 을 직접 쓰는 곳은 Composite Action 과 벤치마크(캐시 없는 기준 측정이 목적)뿐이어야 한다."""
+    allowed = {"cache-benchmark.yml"}
+    for path in WORKFLOWS:
+        if path.name in allowed:
+            continue
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        used = [s.get("uses", "") for j in doc["jobs"].values() for s in j.get("steps", [])]
+        assert not any(u.startswith("actions/setup-python") for u in used), f"{path.name} 이 setup-python 을 직접 쓴다"
+
+
+def test_deploy_is_limited_to_push_or_manual_runs():
+    ci = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    condition = ci["jobs"]["deploy"]["if"]
+    assert "github.event_name == 'push'" in condition and "pull_request" not in condition
+    assert ci["jobs"]["deploy"]["needs"] == "build"

@@ -42,11 +42,13 @@ git remote add upstream https://github.com/03jiho/noticatch.git
 | `scripts/sprint_metrics.py` | `matplotlib` | `python3 scripts/sprint_metrics.py` |
 | `scripts/bootstrap_backlog.py` | `pyyaml` | `DRY_RUN=1 python3 scripts/bootstrap_backlog.py` |
 
+두 스크립트의 패키지는 `python3 -m pip install -r requirements-scripts.txt`로 한 번에 설치합니다.
+
 > 지표 스크립트는 `README.md`의 자동 갱신 구간, `metrics/`, `reports/`, `docs/images/`를 덮어씁니다. 연습으로 돌렸다면 커밋하지 마세요. 이 파일들은 GitHub Actions가 갱신하므로 직접 고치지 않습니다.
 
 ### 테스트와 Lint
 
-PR을 열기 전에 로컬에서 CI와 같은 검사를 실행해 주세요. CI는 Ubuntu·Windows·macOS와 Python 3.11~3.13 조합에서 같은 검사를 돌립니다.
+PR을 열기 전에 로컬에서 CI와 같은 검사를 실행해 주세요. CI는 바뀐 파일을 보고 필요한 검사만 돌립니다(문서만 바뀐 PR은 테스트를 건너뜀). PR에서는 작은 matrix(Ubuntu 3.11~3.13, Windows·macOS 3.12)를, `main`과 태그에서는 Ubuntu·Windows·macOS × Python 3.11~3.13 전체 조합을 실행합니다.
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
