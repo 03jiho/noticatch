@@ -161,6 +161,10 @@ jobs:
             const week = Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
             const title = `주간 요약 ${t.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 
+            // 검색 API는 짧은 시간에 연달아 부르면 보조 속도 제한(403)에 걸린다. 호출 사이에 간격을 둔다.
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            const delay = Number(process.env.SEARCH_DELAY_MS ?? 2000);
+
             const dup = await github.rest.search.issuesAndPullRequests({
               q: `repo:${repo} is:issue in:title "${title}"`, per_page: 1,
             });
@@ -169,9 +173,12 @@ jobs:
             if (existing && existing.user.type !== 'Bot') return core.info(`같은 제목의 사용자 이슈가 있어 건너뜀: ${title}`);
 
             // 요약 이슈 자신(봇이 만든 이슈)은 집계에서 뺀다.
-            const count = async q => (await github.rest.search.issuesAndPullRequests({
-              q: `repo:${repo} ${q}`, per_page: 1,
-            })).data.total_count;
+            const count = async q => {
+              await sleep(delay);
+              return (await github.rest.search.issuesAndPullRequests({
+                q: `repo:${repo} ${q}`, per_page: 1,
+              })).data.total_count;
+            };
 
             const opened = await count(`is:issue created:>=${since} -author:app/github-actions`);
             const closed = await count(`is:issue closed:>=${since} -author:app/github-actions`);
