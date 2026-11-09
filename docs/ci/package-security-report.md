@@ -11,6 +11,22 @@ NotiCatch 의 패키지 배포, 컨테이너 이미지, 의존성 업데이트, 
 | Dependabot 정책(스케줄/그룹/자동머지 조건) | 4개 생태계 설정, 조건부 자동 머지 | [`dependabot.yml`](../../.github/dependabot.yml), [`dependabot-automerge.yml`](../../.github/workflows/dependabot-automerge.yml), [`dependabot_automerge.py`](../../scripts/dependabot_automerge.py) |
 | npm audit/Snyk 기반 보안 스캔 결과를 이슈 또는 리포트로 자동화 | 스캔 → 보고서(Job Summary, 아티팩트) → `security` 이슈 열기·갱신·닫기 | [`security-audit.yml`](../../.github/workflows/security-audit.yml), [`security_report.py`](../../scripts/security_report.py) |
 
+## 실행 증거
+
+모두 `main` 에서 실제로 실행된 기록이다. 링크를 열면 로그를 볼 수 있다.
+
+| 요구 | 증거 | 결과 |
+|---|---|---|
+| 패키지 배포 1.0.0 | [Publish Package 실행](https://github.com/03jiho/noticatch/actions/runs/42662933296) | `+ @03jiho/noticatch-keywords@1.0.0` 배포 → 빈 폴더에서 레지스트리로 설치해 실행 확인 |
+| 버전 업데이트 1.0.1 | [PR #36](https://github.com/03jiho/noticatch/pull/36), [Publish Package 실행](https://github.com/03jiho/noticatch/actions/runs/42663377130) | 새 테스트 3개가 1.0.0 코드에서는 실패(9 통과 / 3 실패)하고 수정 후 12개 통과 → `+ @03jiho/noticatch-keywords@1.0.1` 배포, 설치·실행 확인 |
+| 배포된 패키지 | [패키지 페이지](https://github.com/03jiho/noticatch/pkgs/npm/noticatch-keywords) | 1.0.0, 1.0.1 두 버전이 보인다 (최신 1.0.1) |
+| Docker 푸시와 검증 | [Docker 실행](https://github.com/03jiho/noticatch/actions/runs/42662933495) | ghcr.io 에 `latest`, `sha-1faa5d4` 태그로 푸시. 푸시한 이미지를 digest(`sha256:75d1bf65…`)로 다시 받아 실행 → healthy, `/` 200, `/sample-data.json` 200, 없는 경로 404, root 아님 |
+| Docker 이미지 | [패키지 페이지](https://github.com/03jiho/noticatch/pkgs/container/noticatch-dashboard) | Public, `docker pull ghcr.io/03jiho/noticatch-dashboard:latest` |
+| 푸시 전 검증(PR) | [PR #35 의 Docker 실행](https://github.com/03jiho/noticatch/actions/runs/42633979143) | 올리지 않고 빌드·실행 검증만 통과 |
+| 보안 스캔 → 이슈(열기) | [샘플 실행](https://github.com/03jiho/noticatch/actions/runs/42663200381), [이슈 #37](https://github.com/03jiho/noticatch/issues/37) | 샘플 취약점(critical 2, low 1)으로 `security` 이슈가 자동으로 열림. 조치 기준(moderate) 미만인 low 는 표에서 제외 |
+| 보안 스캔 → 이슈(닫기) | [실제 스캔 실행](https://github.com/03jiho/noticatch/actions/runs/42663268690) | 실제 `npm audit` 결과 0건 → 같은 이슈 #37 에 알림 댓글을 남기고 자동으로 닫음 |
+| 보안 스캔 → 리포트 | 위 실행들의 Job Summary, 아티팩트 `security-report` | 심각도별 건수와 조치 항목 표 |
+
 ## 2. npm 패키지를 GitHub Packages 에 배포
 
 **패키지.** NotiCatch 의 "키워드 구독 & 알림" 기능에서 쓰는 규칙(포함 키워드, 제외 키워드)을 라이브러리로 분리했다. 의존성이 없는 작은 ES 모듈이고, 테스트는 Node 내장 테스트 러너(`node --test`)로 9개를 둔다.
@@ -114,5 +130,6 @@ snyk test --json ─┘   (선택: SNYK_TOKEN)                      ├▶ 아�
 - 패키지가 의존성이 없어서 실제 `npm audit` 결과는 항상 0건이다. 이슈 자동화는 샘플 데이터로 시험했다. 의존성이 생기면 같은 흐름이 그대로 쓰인다.
 - Snyk 은 토큰이 없어 실행해 보지 못했다. 파서만 샘플 JSON 으로 검증했다.
 - Dependabot 은 설정 파일을 읽고 PR 을 여는 쪽이 GitHub 의 서비스라 이 저장소에서 직접 실행해 볼 수 없다. 자동 머지 판단 로직은 Dependabot 이 남기는 커밋 메시지 형식을 가정한 단위 테스트로 검증했다. 실제 Dependabot PR 이 열리면 그 PR 로 처음 동작을 확인하게 된다.
-- GitHub Packages 의 패키지는 처음 올릴 때 공개 여부가 저장소 설정을 따른다. 설치 확인은 항상 토큰으로 한다.
-- ghcr.io 이미지의 공개 여부는 패키지 페이지에서 따로 정할 수 있다. 공개하지 않으면 `docker pull` 에 로그인이 필요하다.
+- GitHub Packages 의 npm 패키지는 공개 저장소에 연결되어 있어도 설치할 때 토큰이 필요하다. 배포 후 설치 확인은 항상 `GITHUB_TOKEN` 으로 한다.
+- ghcr.io 이미지는 Public 으로 확인했다(`docker pull` 에 로그인이 필요 없다).
+- 이슈 자동화의 "열기"는 샘플 데이터로 시험했다. "닫기"는 실제 스캔 결과로 확인했다.
