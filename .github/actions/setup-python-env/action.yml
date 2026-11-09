@@ -1,0 +1,83 @@
+# Composite Action: Python 설치 + 의존성 설치(+캐시)를 한 번에 처리한다.
+# 여러 워크플로우에 복사되어 있던 setup-python / pip install 단계를 이 파일 하나로 모았다.
+# 사용 전에 actions/checkout 이 먼저 실행되어야 한다(이 파일과 requirements 파일을 읽기 위해).
+#
+# 캐시 전략은 cache-benchmark.yml 로 측정해서 골랐다 (docs/ci/optimization-report.md).
+#  - venv (기본): 설치가 끝난 가상환경(.venv) 자체를 캐시한다. 설치를 통째로 건너뛰어 측정에서 가장 빨랐다.
+#  - pip       : pip 다운로드 캐시(setup-python 의 cache: pip). 측정에서 효과가 거의 없었다.
+#  - none      : 캐시 없음.
+# venv 캐시 키에는 OS, CPU 구조, 정확한 Python 버전, requirements 파일 내용의 해시를 넣는다.
+# 러너 이미지가 바뀌어 Python 패치 버전이 달라지면 키가 달라져서 깨진 가상환경을 복원하지 않는다.
+name: Setup Python environment
+description: Python 설치, 의존성 설치, 가상환경 캐시
+
+inputs:
+  python-version:
+    description: 설치할 Python 버전
+    default: "3.12"
+  requirements:
+    description: 설치할 requirements 파일. 여러 개면 줄바꿈으로 구분하고, 비우면 설치와 캐시를 건너뛴다.
+    default: requirements-dev.txt
+  cache:
+    description: 캐시 전략 ("venv", "pip", "none")
+    default: venv
+
+runs:
+  using: composite
+  steps:
+    - id: py
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: ${{ (inputs.cache == 'pip' && inputs.requirements != '') && 'pip' || '' }}
+        cache-dependency-path: ${{ inputs.requirements }}
+
+    - name: Compute venv cache key
+      id: key
+      if: ${{ inputs.cache == 'venv' && inputs.requirements != '' }}
+      shell: bash
+      env:
+        REQUIREMENTS: ${{ inputs.requirements }}
+      run: |
+        python - <<'PY' >> "$GITHUB_OUTPUT"
+        import hashlib, os
+        h = hashlib.sha256()
+        for name in os.environ["REQUIREMENTS"].split():
+            h.update(name.encode())
+            h.update(open(name, "rb").read())
+        print("hash=" + h.hexdigest()[:16])
+        PY
+
+    - name: Restore venv cache
+      id: venv
+      if: ${{ inputs.cache == 'venv' && inputs.requirements != '' }}
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ runner.arch }}-py${{ steps.py.outputs.python-version }}-${{ steps.key.outputs.hash }}
+
+    - name: Install dependencies
+      # venv 캐시를 복원했다면(cache-hit) 설치를 건너뛴다.
+      if: ${{ inputs.requirements != '' && steps.venv.outputs.cache-hit != 'true' }}
+      shell: bash
+      env:
+        REQUIREMENTS: ${{ inputs.requirements }}
+        CACHE_MODE: ${{ inputs.cache }}
+      run: |
+        args=()
+        for f in $REQUIREMENTS; do args+=(-r "$f"); done
+        if [ "$CACHE_MODE" = "venv" ]; then
+          python -m venv .venv
+          if [ -d .venv/Scripts ]; then PY=.venv/Scripts/python; else PY=.venv/bin/python; fi
+          "$PY" -m pip install "${args[@]}"
+        else
+          python -m pip install "${args[@]}"
+        fi
+
+    - name: Activate venv
+      if: ${{ inputs.cache == 'venv' && inputs.requirements != '' }}
+      shell: bash
+      run: |
+        if [ -d .venv/Scripts ]; then BIN=.venv/Scripts; else BIN=.venv/bin; fi
+        echo "$GITHUB_WORKSPACE/$BIN" >> "$GITHUB_PATH"
+        echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> "$GITHUB_ENV"

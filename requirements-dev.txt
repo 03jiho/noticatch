@@ -1,4 +1,4 @@
-# 개발·CI 전용 의존성 (실행 의존성은 스크립트 머리말 참고)
+# Dev and CI only. Keep this file ASCII: old pip on Windows (cp1252) fails to read other characters.
 pytest>=8,<10
 pyyaml>=6,<7
 ruff>=0.6,<1

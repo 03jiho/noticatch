@@ -19,10 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup-python-env
         with:
-          python-version: "3.12"
-      - run: pip install pyyaml
+          requirements: requirements-scripts.txt
       - name: Create labels, milestones, issues
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

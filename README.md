@@ -313,3 +313,20 @@ python3 -m pytest
 ```
 
 테스트는 네트워크 없이 GitHub API 호출을 가짜로 바꿔 지표 계산, 백로그 동기화, 번들 생성·검증, 저장소 구조(백로그 데이터, 필수 문서, 워크플로우 권한)를 검사한다.
+
+---
+
+## 12. 8주차: 워크플로우 실행 최적화
+
+7주차 파이프라인을 **재사용 · 캐싱 · 조건부 실행**으로 최적화하고 전후를 실제 실행 기록으로 측정했다.
+**전후 비교 리포트: [`docs/ci/optimization-report.md`](docs/ci/optimization-report.md)**
+
+| 요구 | 구현 | 측정 결과 |
+|---|---|---|
+| Matrix 확장 + 중복 제거 | PR은 5개 조합, main·태그는 전체 9개 + 참고용 3.14. matrix 정의는 Reusable Workflow([`python-tests.yml`](.github/workflows/python-tests.yml)), 설치·캐시는 Composite Action([`setup-python-env`](.github/actions/setup-python-env/action.yml))으로 모음 | `setup-python` 직접 사용 7곳 → 2곳 (Composite 1곳 + 측정용 1곳) |
+| 캐싱 전후 수치 | pip 캐시와 가상환경 캐시를 [`cache-benchmark.yml`](.github/workflows/cache-benchmark.yml)로 측정해 더 빠른 쪽을 기본값으로 채택 | pip 캐시는 효과 없음(±노이즈), **가상환경 캐시는 설치 시간 -50~81%** (Windows 16초 → 3초). 같은 커밋 재실행은 실행 구간 **-25.0%**, 작업 시간 합 **-26.8%** |
+| 조건부·선택적 배포 | [`changed_paths.py`](scripts/changed_paths.py)가 변경 파일을 보고 lint·test·build 여부를 결정. PR은 deploy 없음, main·`v*` 태그만 deploy | 문서만 바꾼 PR: 실행 작업 **11개 → 1개**, 작업 시간 합 **170초 → 5초 (-97.1%)** |
+
+솔직한 한계도 리포트에 적었다. 코드 변경 PR의 *첫 실행*은 변경 감지 작업과 캐시 저장 비용 때문에 실행 구간이 오히려 16.4% 늘었고(55초 → 64초), 캐시가 채워진 뒤에는 48초로 줄었다. 시간은 1초 단위로만 측정된다.
+
+측정 도구는 [`scripts/ci_timing.py`](scripts/ci_timing.py)이고, 리포트의 숫자는 실행 번호만 있으면 누구나 다시 계산할 수 있다.
