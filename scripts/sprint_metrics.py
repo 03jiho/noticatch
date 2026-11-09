@@ -23,7 +23,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from pathlib import Path
 
 API = "https://api.github.com"
@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REPO = os.environ.get("GITHUB_REPOSITORY", "03jiho/noticatch")
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 KST = timezone(timedelta(hours=9))
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 TODAY = NOW.astimezone(KST).date()
 
 
@@ -69,8 +69,8 @@ def ts(s: str | None) -> datetime | None:
 
 
 def points(issue: dict) -> int:
-    for l in issue["labels"]:
-        m = re.fullmatch(r"size:\s*(\d+)", l["name"])
+    for label in issue["labels"]:
+        m = re.fullmatch(r"size:\s*(\d+)", label["name"])
         if m:
             return int(m.group(1))
     return 0
@@ -194,7 +194,7 @@ def charts(r: dict) -> list[str]:
         x = [date.fromisoformat(b["date"]).strftime("%m/%d") for b in bd]
         fig, ax = plt.subplots(figsize=(8, 3.6), dpi=150)
         ax.plot(x, [b["ideal"] for b in bd], color=gray, linestyle="--", linewidth=1.5, label="Ideal")
-        actual = [(xi, b["remaining"]) for xi, b in zip(x, bd) if b["remaining"] is not None]
+        actual = [(xi, b["remaining"]) for xi, b in zip(x, bd, strict=False) if b["remaining"] is not None]
         if actual:
             ax.plot([a[0] for a in actual], [a[1] for a in actual], color=blue, linewidth=2,
                     marker="o", markersize=4, label="Remaining")
@@ -227,7 +227,7 @@ def charts(r: dict) -> list[str]:
             for b in bars:
                 ax.annotate(f"{int(b.get_height())}", (b.get_x() + b.get_width() / 2, b.get_height()),
                             ha="center", va="bottom", fontsize=9, color=ink, xytext=(0, 2), textcoords="offset points")
-        ax.set_xticks(list(xs), [f"{n}\n({s['status']})" for n, s in zip(names, sprints)])
+        ax.set_xticks(list(xs), [f"{n}\n({s['status']})" for n, s in zip(names, sprints, strict=False)])
         top = max([s["committed_points"] for s in sprints] + [1])
         ax.set_ylim(0, top * 1.2)
         ax.yaxis.get_major_locator().set_params(integer=True)
@@ -278,7 +278,7 @@ def report(r: dict) -> str:
         "| 이슈 | 포인트 | Cycle Time | Lead Time | 종료 (KST) |", "|---|---|---|---|---|",
     ]
     done = [(s, i) for s in r["sprints"] for i in s["issues"] if i["state"] == "closed"]
-    for s, i in sorted(done, key=lambda x: x[1]["closed_at"]):
+    for _, i in sorted(done, key=lambda x: x[1]["closed_at"]):
         closed = ts(i["closed_at"]).astimezone(KST)
         lines.append(f"| #{i['number']} {i['title']} | {i['points']} | {fmt_h(i['cycle_time_h'])} | "
                      f"{fmt_h(i['lead_time_h'])} | {closed:%m-%d %H:%M} |")
