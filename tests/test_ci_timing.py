@@ -140,3 +140,12 @@ def test_cli_pipeline_pairs(tmp_path, monkeypatch):
     js = tmp_path / "p.json"
     ct.main(["pipeline", "--pair", "코드 변경 PR|1|2", "--json", str(js)])
     assert '"wall_pct": 50.0' in js.read_text(encoding="utf-8")
+
+
+def test_cli_bench_pools_samples_from_several_runs(tmp_path, monkeypatch):
+    runs = {1: [bench_job("ubuntu-latest", "dev", 1, 10, 2, 3)], 2: [bench_job("ubuntu-latest", "dev", 1, 20, 2, 3)]}
+    monkeypatch.setattr(ct, "fetch_jobs", lambda run_id: runs[run_id])
+    js = tmp_path / "b.json"
+    ct.main(["bench", "--run", "1", "--run", "2", "--json", str(js)])
+    text = js.read_text(encoding="utf-8")
+    assert '"samples": 2' in text and '"cold": 15.0' in text  # 10 과 20 의 중앙값

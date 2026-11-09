@@ -223,7 +223,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("bench")
-    b.add_argument("--run", type=int, required=True)
+    b.add_argument("--run", type=int, action="append", required=True,
+                   help="여러 번 지정하면 여러 실행의 샘플을 합쳐 중앙값을 낸다")
     p = sub.add_parser("pipeline")
     p.add_argument("--pair", action="append", required=True, metavar="이름|전RUN|후RUN")
     h = sub.add_parser("history")
@@ -236,9 +237,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.cmd == "bench":
-        rows = summarize_bench(bench_samples(fetch_jobs(args.run)))
+        samples = [s for run_id in args.run for s in bench_samples(fetch_jobs(run_id))]
+        rows = summarize_bench(samples)
         text = render_bench(rows)
-        data = {"run": args.run, "rows": rows}
+        data = {"runs": args.run, "rows": rows}
     elif args.cmd == "pipeline":
         pairs = []
         for spec in args.pair:
