@@ -6,7 +6,10 @@
 #   3) purge   : 로컬 pip 캐시를 비운다
 #   4) cold    : pip install --no-cache-dir  ← "캐시 없음"                            (측정)
 #   5) restore : actions/cache/restore 로 캐시를 복원한다                             (측정)
-#   6) warm    : 복원된 캐시로 pip install   ← "캐시 사용" = 복원 + 이 설치           (측정)
+#   6) warm    : 복원된 캐시로 pip install   ← "pip 캐시 사용" = 복원 + 이 설치       (측정)
+# 이어서 두 번째 전략인 "설치가 끝난 가상환경 자체를 캐시"도 같은 작업에서 측정한다.
+#   7) venv    : 가상환경을 만들어 설치하고 actions/cache 로 저장한 뒤 지운다          (측정 안 함)
+#   8) restore : 가상환경 캐시를 복원한다 ← "가상환경 캐시 사용"(설치를 건너뜀)       (측정)
 # 단계별 시간은 Actions API 의 started_at/completed_at 이고, report 작업이 scripts/ci_timing.py 로 집계한다.
 #
 # 실행 시점: 수동 실행, 그리고 이 파일·requirements-scripts.txt·Composite Action 이 바뀐 PR.
@@ -70,6 +73,30 @@ jobs:
           fail-on-cache-miss: true
       - name: Install with restored cache
         run: python -m pip install --target warm_site -r requirements-${{ matrix.case }}.txt
+      - name: Build venv
+        run: |
+          python -m venv venv_site
+          if [ -d venv_site/Scripts ]; then BIN=venv_site/Scripts; else BIN=venv_site/bin; fi
+          "$BIN/python" -m pip install -r requirements-${{ matrix.case }}.txt
+      - name: Save venv cache
+        uses: actions/cache/save@v4
+        with:
+          path: venv_site
+          key: benchv-${{ runner.os }}-${{ matrix.case }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.n }}
+      - name: Remove venv
+        run: rm -rf venv_site
+      - name: Restore venv cache
+        uses: actions/cache/restore@v4
+        with:
+          path: venv_site
+          key: benchv-${{ runner.os }}-${{ matrix.case }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.n }}
+          fail-on-cache-miss: true
+      - name: Check restored venv
+        run: |
+          if [ -d venv_site/Scripts ]; then BIN=venv_site/Scripts; else BIN=venv_site/bin; fi
+          "$BIN/python" -c "import sys; print(sys.prefix)"
+          "$BIN/python" -m pip --version
+          "$BIN/python" -m pip check
 
   report:
     name: Report

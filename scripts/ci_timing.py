@@ -76,7 +76,8 @@ def bench_samples(jobs: list[dict]) -> list[dict]:
         if None in (cold, restore, warm_install):
             continue
         out.append({"os": m["os"], "case": m["case"], "n": int(m["n"]), "cold": cold,
-                    "restore": restore, "warm_install": warm_install, "warm": restore + warm_install})
+                    "restore": restore, "warm_install": warm_install, "warm": restore + warm_install,
+                    "venv": step_seconds(job, "Restore venv cache")})  # 가상환경 캐시 측정이 없는 실행이면 None
     return out
 
 
@@ -88,31 +89,38 @@ def summarize_bench(samples: list[dict]) -> list[dict]:
     rows = []
     for (os_name, case), items in sorted(groups.items()):
         cold, warm = median([i["cold"] for i in items]), median([i["warm"] for i in items])
+        venv = median([i["venv"] for i in items if i.get("venv") is not None])
         rows.append({
             "os": os_name, "case": case, "samples": len(items),
             "cold": cold, "restore": median([i["restore"] for i in items]),
             "warm_install": median([i["warm_install"] for i in items]), "warm": warm,
             "saved": None if cold is None or warm is None else round(cold - warm, 2),
             "improvement_pct": improvement(cold, warm),
+            "venv": venv, "venv_improvement_pct": improvement(cold, venv),
         })
     return rows
 
 
+def pct(v: float | None) -> str:
+    return "-" if v is None else f"{v:+.1f}%"
+
+
 def render_bench(rows: list[dict]) -> str:
     out = [
-        "### 캐시 효과 (pip 의존성 설치, 반복 측정 중앙값)",
+        "### 캐시 효과 (의존성 설치, 반복 측정 중앙값)",
         "",
         "- **캐시 없음**: `pip install --no-cache-dir` 시간",
-        "- **캐시 사용**: 저장해 둔 pip 캐시를 복원(`actions/cache/restore`)하는 시간 + 복원 뒤 `pip install` 시간",
-        "- 개선율 = (캐시 없음 − 캐시 사용) / 캐시 없음 × 100. 음수면 캐시가 오히려 느린 것이다.",
+        "- **pip 캐시**: 저장해 둔 pip 다운로드 캐시를 복원하는 시간 + 복원 뒤 `pip install` 시간",
+        "- **가상환경 캐시**: 설치가 끝난 가상환경(venv) 자체를 복원하는 시간. 설치를 건너뛴다.",
+        "- 개선율 = (캐시 없음 − 캐시 사용) / 캐시 없음 × 100. 음수면 캐시가 오히려 느린 것이다. 시간은 1초 단위로만 측정된다.",
         "",
-        "| OS | 의존성 | 반복 | 캐시 없음(초) | 복원(초) | 복원 후 설치(초) | 캐시 사용 합계(초) | 단축(초) | 개선율 |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| OS | 의존성 | 반복 | 캐시 없음(초) | pip 캐시(초) | 개선율 | 가상환경 캐시(초) | 개선율 |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in rows:
-        pct = "-" if r["improvement_pct"] is None else f"{r['improvement_pct']:+.1f}%"
-        out.append(f"| {r['os']} | {r['case']} | {r['samples']} | {r['cold']} | {r['restore']} | "
-                   f"{r['warm_install']} | {r['warm']} | {r['saved']} | {pct} |")
+        venv = "-" if r.get("venv") is None else r["venv"]
+        out.append(f"| {r['os']} | {r['case']} | {r['samples']} | {r['cold']} | {r['warm']} | "
+                   f"{pct(r['improvement_pct'])} | {venv} | {pct(r.get('venv_improvement_pct'))} |")
     return "\n".join(out) + "\n"
 
 
@@ -148,10 +156,6 @@ def compare_runs(before: dict, after: dict) -> dict:
         "weighted_pct": improvement(before["weighted_seconds"], after["weighted_seconds"]),
         "jobs_ran_before": before["jobs_ran"], "jobs_ran_after": after["jobs_ran"],
     }
-
-
-def pct(v: float | None) -> str:
-    return "-" if v is None else f"{v:+.1f}%"
 
 
 def render_pipeline(pairs: list[dict]) -> str:

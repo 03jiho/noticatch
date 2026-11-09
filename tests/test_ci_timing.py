@@ -13,10 +13,13 @@ def step(name, start, end, conclusion="success"):
     return {"name": name, "started_at": at(start), "completed_at": at(end), "conclusion": conclusion}
 
 
-def bench_job(os_name, case, n, cold, restore, warm, conclusion="success"):
-    return {"name": f"Bench ({os_name}, {case}, #{n})", "conclusion": conclusion, "steps": [
-        step("Install without cache", 0, cold), step("Restore pip cache", cold, cold + restore),
-        step("Install with restored cache", cold + restore, cold + restore + warm)]}
+def bench_job(os_name, case, n, cold, restore, warm, conclusion="success", venv=None):
+    steps = [step("Install without cache", 0, cold), step("Restore pip cache", cold, cold + restore),
+             step("Install with restored cache", cold + restore, cold + restore + warm)]
+    if venv is not None:
+        start = cold + restore + warm
+        steps.append(step("Restore venv cache", start, start + venv))
+    return {"name": f"Bench ({os_name}, {case}, #{n})", "conclusion": conclusion, "steps": steps}
 
 
 def job(name, start, end, conclusion="success"):
@@ -56,7 +59,7 @@ def test_bench_samples_skips_failed_and_unrelated_jobs():
     samples = ct.bench_samples(jobs)
     assert len(samples) == 1
     assert samples[0] == {"os": "ubuntu-latest", "case": "dev", "n": 1, "cold": 10, "restore": 2,
-                          "warm_install": 3, "warm": 5}
+                          "warm_install": 3, "warm": 5, "venv": None}
 
 
 def test_summarize_bench_uses_median_per_group():
@@ -73,8 +76,15 @@ def test_summarize_bench_uses_median_per_group():
 def test_render_bench_shows_negative_improvement():
     rows = ct.summarize_bench(ct.bench_samples([bench_job("ubuntu-latest", "dev", 1, 2, 2, 2)]))
     text = ct.render_bench(rows)
-    assert "-100.0%" in text
-    assert "| ubuntu-latest | dev | 1 | 2.0 | 2.0 | 2.0 | 4.0 | -2.0 | -100.0% |" in text
+    assert "| ubuntu-latest | dev | 1 | 2.0 | 4.0 | -100.0% | - | - |" in text
+
+
+def test_venv_cache_is_summarized_with_its_own_improvement():
+    jobs = [bench_job("macos-latest", "scripts", n, 20, 2, 10, venv=v) for n, v in [(1, 4), (2, 5), (3, 9)]]
+    row = ct.summarize_bench(ct.bench_samples(jobs))[0]
+    assert (row["cold"], row["warm"], row["improvement_pct"]) == (20, 12, 40.0)
+    assert (row["venv"], row["venv_improvement_pct"]) == (5, 75.0)
+    assert "| macos-latest | scripts | 3 | 20.0 | 12.0 | +40.0% | 5.0 | +75.0% |" in ct.render_bench([row])
 
 
 @pytest.mark.parametrize(("name", "bucket"), [
