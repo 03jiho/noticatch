@@ -1,0 +1,59 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "minimist": {
+      "name": "minimist",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1096465,
+          "name": "minimist",
+          "dependency": "minimist",
+          "title": "Prototype Pollution in minimist",
+          "url": "https://github.com/advisories/GHSA-xvch-5gv4-984h",
+          "severity": "critical",
+          "range": "<0.2.4"
+        }
+      ],
+      "effects": ["mkdirp"],
+      "range": "<0.2.4",
+      "nodes": ["node_modules/minimist"],
+      "fixAvailable": {"name": "mkdirp", "version": "1.0.4", "isSemVerMajor": true}
+    },
+    "mkdirp": {
+      "name": "mkdirp",
+      "severity": "critical",
+      "isDirect": true,
+      "via": ["minimist"],
+      "effects": [],
+      "range": "0.4.1 - 0.5.1",
+      "nodes": ["node_modules/mkdirp"],
+      "fixAvailable": {"name": "mkdirp", "version": "1.0.4", "isSemVerMajor": true}
+    },
+    "debug": {
+      "name": "debug",
+      "severity": "low",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1094219,
+          "name": "debug",
+          "dependency": "debug",
+          "title": "Regular Expression Denial of Service in debug",
+          "url": "https://github.com/advisories/GHSA-gxpj-cx7g-858c",
+          "severity": "low",
+          "range": "<2.6.9"
+        }
+      ],
+      "effects": [],
+      "range": "<2.6.9",
+      "nodes": ["node_modules/debug"],
+      "fixAvailable": true
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {"info": 0, "low": 1, "moderate": 0, "high": 0, "critical": 2, "total": 3},
+    "dependencies": {"prod": 3, "dev": 0, "optional": 0, "peer": 0, "peerOptional": 0, "total": 3}
+  }
+}

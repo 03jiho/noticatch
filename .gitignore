@@ -11,3 +11,7 @@ venv/
 # CI 산출물 (로컬에서 build_dist.py / pytest 를 돌렸을 때)
 dist/
 test-results/
+
+# Node
+node_modules/
+*.tgz

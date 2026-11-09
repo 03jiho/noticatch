@@ -1,0 +1,138 @@
+# Docker 이미지를 자동으로 빌드하고 GitHub Container Registry(ghcr.io)에 올린 뒤, 실제로 실행해 검증한다.
+#
+# - PR        : 이미지를 빌드해서(올리지는 않음) 러너에서 실행해 본다. 합치기 전에 깨진 이미지를 잡는다.
+# - main push : 빌드 → ghcr.io 에 푸시(latest, sha 태그) → 푸시한 이미지를 다시 받아서 실행해 본다.
+# - v* 태그    : 위와 같고, 버전 태그(1.2.3, 1.2)도 붙인다.
+#
+# 이미지: ghcr.io/<소유자>/noticatch-dashboard
+# 인증:   secrets.GITHUB_TOKEN (packages: write). 별도 비밀값이 필요 없다.
+name: Docker
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "dashboard/**"
+      - "scripts/docker_smoke.sh"
+      - ".github/workflows/docker.yml"
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "dashboard/**"
+      - "scripts/docker_smoke.sh"
+      - ".github/workflows/docker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/noticatch-dashboard
+
+jobs:
+  build:
+    name: Build, push and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write   # ghcr.io 에 이미지를 올릴 때만 필요하다.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # PR 에서는 올리지 않으므로 로그인하지 않는다. (포크 PR 은 토큰도 읽기 전용이다.)
+      - name: Log in to ghcr.io
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # IMAGE 는 대문자가 섞인 소유자 이름을 그대로 쓸 수 없어 소문자로 바꾼다.
+      - name: Normalize image name
+        id: image
+        run: echo "name=${IMAGE,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=pr
+
+      # 1) 로컬(러너)에 이미지를 만들어 둔다. PR 이든 main 이든 같은 이미지를 검증한다.
+      - name: Build image (local)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: noticatch-dashboard:ci
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run the image locally and verify
+        run: scripts/docker_smoke.sh noticatch-dashboard:ci 8080
+
+      # 2) 검증을 통과한 뒤에만 올린다. 위에서 캐시한 레이어를 그대로 쓴다.
+      - name: Push to ghcr.io
+        if: ${{ github.event_name != 'pull_request' }}
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+
+      # 3) 레지스트리에 올라간 이미지를 다시 받아서(digest 로 고정) 실행해 본다.
+      - name: Pull the pushed image and verify
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          NAME: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          docker pull "$NAME@$DIGEST"
+          scripts/docker_smoke.sh "$NAME@$DIGEST" 8081
+
+      - name: Summary
+        env:
+          NAME: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          {
+            echo "### Docker 이미지"
+            echo ""
+            if [ "$EVENT" = "pull_request" ]; then
+              echo "- PR 이라 이미지를 올리지 않고, 빌드와 로컬 실행 검증만 했습니다. (통과)"
+            else
+              echo "- 이미지: \`$NAME\`"
+              echo "- digest: \`$DIGEST\`"
+              echo "- 태그:"
+              echo "$TAGS" | sed 's/^/  - `/; s/$/`/'
+              echo "- 올린 이미지를 다시 받아 실행한 검증: 통과"
+              echo ""
+              echo '```bash'
+              echo "docker run --rm -p 8080:8080 $NAME:latest"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

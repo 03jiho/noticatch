@@ -1,0 +1,153 @@
+# 의존성 보안 스캔 자동화: npm audit (+ 선택적으로 Snyk) → 보고서 → GitHub 이슈
+#
+# - 실행: 매주 월요일 09:30(KST), 패키지 의존성이 바뀌는 PR, 수동 실행.
+# - 결과: 항상 Job Summary 와 보고서 아티팩트(security-report)를 남긴다.
+# - 이슈: 정기·수동 실행에서 조치 기준(기본 moderate) 이상의 취약점이 있으면 `security` 라벨 이슈를 열거나 갱신하고,
+#         취약점이 사라지면 같은 이슈를 닫는다. (같은 이슈 하나만 쓰므로 쌓이지 않는다)
+# - PR:   조치가 필요한 취약점이 있으면 PR 검사를 실패시킨다.
+# - 스캔 자체가 실패하면(레지스트리 오류 등) "취약점 없음"으로 넘기지 않고 실패시킨다.
+#
+# Secrets
+# - secrets.SNYK_TOKEN : (선택) 있으면 Snyk 스캔도 같이 돌린다. 없으면 npm audit 만 쓴다.
+name: Security Audit
+
+on:
+  schedule:
+    - cron: "30 0 * * 1"   # 월요일 00:30 UTC = 09:30 KST
+  pull_request:
+    paths:
+      - "packages/**"
+      - "scripts/security_report.py"
+      - ".github/workflows/security-audit.yml"
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: "실제 스캔 대신 취약점이 들어 있는 샘플 결과로 이슈 자동화를 시험한다"
+        type: boolean
+        default: false
+      threshold:
+        description: "조치 기준 심각도"
+        type: choice
+        options: [low, moderate, high, critical]
+        default: moderate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PKG_DIR: packages/noticatch-keywords
+  ISSUE_TITLE: "보안 스캔: 의존성 취약점 발견"
+  THRESHOLD: ${{ inputs.threshold || 'moderate' }}
+
+jobs:
+  audit:
+    name: npm audit / Snyk
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write   # 이슈를 열고 닫을 때만 필요하다.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: npm audit
+        id: npm
+        working-directory: ${{ env.PKG_DIR }}
+        env:
+          SAMPLE: ${{ inputs.sample }}
+        run: |
+          if [ "$SAMPLE" = "true" ]; then
+            cp "$GITHUB_WORKSPACE/tests/fixtures/npm-audit-sample.json" "$GITHUB_WORKSPACE/audit.json"
+            echo "샘플 결과를 사용합니다."
+          else
+            # npm audit 은 취약점이 있으면 종료 코드 1 을 돌려주므로 결과 파일만 받고 판단은 보고서 스크립트가 한다.
+            npm audit --json > "$GITHUB_WORKSPACE/audit.json" || true
+          fi
+
+      - name: Snyk test (optional)
+        id: snyk
+        if: ${{ inputs.sample != true }}
+        working-directory: ${{ env.PKG_DIR }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "SNYK_TOKEN 이 설정되지 않아 Snyk 스캔은 건너뜁니다. (npm audit 만 사용)"
+            exit 0
+          fi
+          npm install --global snyk
+          # 취약점이 있으면 종료 코드 1 이다. 2 이상이면 스캔 자체의 오류다.
+          code=0
+          snyk test --json > "$GITHUB_WORKSPACE/snyk.json" || code=$?
+          if [ "$code" -ge 2 ]; then echo "Snyk 실행 오류(종료 코드 $code)"; exit 1; fi
+          echo "ran=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build report
+        id: report
+        env:
+          SAMPLE: ${{ inputs.sample }}
+          SNYK_RAN: ${{ steps.snyk.outputs.ran }}
+        run: |
+          args=(--npm audit.json --threshold "$THRESHOLD" --out report.md --github-output "$GITHUB_OUTPUT")
+          if [ "$SNYK_RAN" = "true" ]; then args+=(--snyk snyk.json); fi
+          if [ "$SAMPLE" = "true" ]; then args+=(--note "이 결과는 이슈 자동화를 시험하기 위한 샘플 데이터입니다. 실제 취약점이 아닙니다."); fi
+          python3 scripts/security_report.py "${args[@]}"
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            report.md
+            audit.json
+            snyk.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # 정기·수동 실행만 이슈를 건드린다. PR 에서는 아래 실패 처리로 알린다.
+      - name: Open, update or close the security issue
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ACTIONABLE: ${{ steps.report.outputs.actionable }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create security --color B60205 --description "보안 스캔(npm audit/Snyk) 결과와 취약점 대응" --repo "$REPO" 2>/dev/null || true
+          number=$(gh api "repos/$REPO/issues?state=open&labels=security&per_page=100" \
+            --jq '[.[] | select(.title == env.ISSUE_TITLE and (.pull_request | not))][0].number // empty')
+
+          {
+            cat report.md
+            echo ""
+            echo "---"
+            echo "자동 생성: [Security Audit 실행]($RUN_URL). 취약점이 해결되면 다음 스캔에서 이 이슈를 자동으로 닫습니다."
+          } > issue-body.md
+
+          if [ "$ACTIONABLE" -gt 0 ]; then
+            if [ -n "$number" ]; then
+              gh api -X PATCH "repos/$REPO/issues/$number" -F body=@issue-body.md > /dev/null
+              echo "이슈 #$number 를 갱신했습니다."
+            else
+              gh api -X POST "repos/$REPO/issues" -f title="$ISSUE_TITLE" -F body=@issue-body.md -f "labels[]=security" --jq '"이슈를 열었습니다: " + .html_url'
+            fi
+          elif [ -n "$number" ]; then
+            gh api -X POST "repos/$REPO/issues/$number/comments" -f body="최근 스캔에서 조치가 필요한 취약점이 없어 자동으로 닫습니다. ($RUN_URL)" > /dev/null
+            gh api -X PATCH "repos/$REPO/issues/$number" -f state=closed -f state_reason=completed > /dev/null
+            echo "이슈 #$number 를 닫았습니다."
+          else
+            echo "조치가 필요한 취약점이 없고 열린 이슈도 없습니다."
+          fi
+
+      - name: Fail the pull request check on actionable vulnerabilities
+        if: ${{ github.event_name == 'pull_request' && steps.report.outputs.actionable != '0' }}
+        run: |
+          echo "::error::조치가 필요한 취약점이 ${{ steps.report.outputs.actionable }}건 있습니다. 위 보고서를 확인해 주세요."
+          exit 1

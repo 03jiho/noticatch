@@ -1,0 +1,44 @@
+# Dependabot PR 자동 머지.
+#
+# 검사 워크플로우가 하나 끝날 때마다 실행해서, 그 PR 의 검사가 모두 통과했고 조건(scripts/dependabot_automerge.py)을
+# 만족하면 squash 머지한다. 아직 진행 중인 검사가 있으면 아무것도 하지 않고, 마지막 검사가 끝날 때 머지된다.
+#
+# 왜 workflow_run 인가: Dependabot 이 연 PR 의 pull_request 워크플로우는 토큰이 읽기 전용이라 머지할 수 없다.
+# workflow_run 은 기본 브랜치의 워크플로우 파일로 쓰기 권한을 가지고 실행된다. PR 의 코드는 실행하지 않고
+# GitHub API 로 상태만 읽는다.
+name: Dependabot Auto-merge
+
+on:
+  workflow_run:
+    workflows: ["CI", "Package CI", "Docker", "PR Title Lint"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  automerge:
+    name: Merge if the policy allows
+    if: >-
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write        # squash 머지
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4   # 기본 브랜치(main)의 스크립트를 쓴다. PR 코드는 가져오지 않는다.
+      - name: Evaluate and merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          if [ -z "$PR_NUMBER" ]; then echo "연결된 PR 이 없어 건너뜁니다."; exit 0; fi
+          python3 scripts/dependabot_automerge.py --pr "$PR_NUMBER"

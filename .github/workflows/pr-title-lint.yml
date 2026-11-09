@@ -13,6 +13,9 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    # Dependabot 이 만드는 제목은 prefix 설정(chore(deps) 등) 때문에 형식은 맞지만 그룹 이름이 길어 72자를 넘길 수 있다.
+    # 제목 규칙은 사람이 쓰는 PR 에 적용한다.
+    if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
     steps:
       - name: Check Conventional Commits format
         env:
