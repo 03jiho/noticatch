@@ -1,0 +1,17 @@
+# 개발 도구 설정. 패키지 배포용이 아니라서 [project] 표는 두지 않는다.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["metrics", "reports", "docs"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: import 정렬, B: bugbear, UP: 최신 문법
+select = ["E", "F", "W", "I", "B", "UP"]
+# 한글 문자열과 표 문자열 때문에 긴 줄이 생겨서 줄 길이(E501)는 검사하지 않는다.
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+addopts = "-ra"

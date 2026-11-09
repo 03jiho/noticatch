@@ -27,7 +27,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
 API = "https://api.github.com"
@@ -40,7 +40,7 @@ WINDOW_DAYS = int(os.environ.get("WINDOW_DAYS", "30"))
 WEEKS = int(os.environ.get("WEEKS", "8"))
 INCIDENT_LABEL = os.environ.get("INCIDENT_LABEL", "incident")
 
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 
 
 # ---------------------------------------------------------------- API helpers
@@ -231,7 +231,7 @@ def classify(m: dict) -> dict:
         if v is None:
             return "N/A"
         names = ["Elite", "High", "Medium", "Low"]
-        for name, cut in zip(names, cuts):
+        for name, cut in zip(names, cuts, strict=False):
             if (v >= cut) if reverse else (v <= cut):
                 return name
         return "Low"
@@ -273,7 +273,7 @@ def summary_table(r: dict) -> str:
         ("Change Failure Rate", f"{fmt_rate(m['change_failure_rate']['rate'])} ({m['change_failure_rate']['failed']}/{m['change_failure_rate']['total']})", lv["change_failure_rate"]),
         ("MTTR", f"{fmt_h(m['mttr']['median_h'])} (중앙값, n={m['mttr']['samples']})", lv["mttr"]),
     ]
-    out = ["| 지표 | 최근 %d일 | 등급(참고) |" % r["window_days"], "|---|---|---|"]
+    out = [f"| 지표 | 최근 {r['window_days']}일 | 등급(참고) |", "|---|---|---|"]
     out += [f"| {a} | {b} | {c} |" for a, b, c in rows]
     return "\n".join(out)
 

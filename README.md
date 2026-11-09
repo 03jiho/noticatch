@@ -7,7 +7,7 @@
 | 과목 | OSS기반SW프로그래밍 |
 | 작성자 | 김지호 (2243577) · [@03jiho](https://github.com/03jiho) |
 | 라이선스 | MIT |
-| 상태 | 제안 단계 (1주차) |
+| 상태 | 설계·협업 체계 구축 중 (6주차 기준, 기능 구현 전) |
 
 ---
 
@@ -163,13 +163,13 @@ GitHub Actions로 DORA 4대 지표를 자동으로 모으고, 대시보드와 �
 ### 현재 지표 (자동 갱신)
 
 <!-- DORA:START -->
-_마지막 자동 갱신: 2026-11-02 13:37 KST · [주간 보고서](reports/weekly/2026-W45.md) · [JSON](metrics/dora-latest.json)_
+_마지막 자동 갱신: 2026-11-09 12:18 KST · [주간 보고서](reports/weekly/2026-W46.md) · [JSON](metrics/dora-latest.json)_
 
 | 지표 | 최근 30일 | 등급(참고) |
 |---|---|---|
-| Deployment Frequency | 7회 (주 1.63회) | High |
-| Lead Time for Changes | 1분 (중앙값, n=7) | Elite |
-| Change Failure Rate | 0% (0/7) | Elite |
+| Deployment Frequency | 5회 (주 1.17회) | High |
+| Lead Time for Changes | 1분 (중앙값, n=5) | Elite |
+| Change Failure Rate | 0% (0/5) | Elite |
 | MTTR | 데이터 없음 (중앙값, n=0) | N/A |
 <!-- DORA:END -->
 
@@ -220,14 +220,14 @@ _마지막 자동 갱신: 2026-11-02 13:37 KST · [주간 보고서](reports/wee
 - **Cycle Time**: 담당자 지정(작업 시작) → 이슈 종료
 
 <!-- SPRINT:START -->
-_마지막 자동 갱신: 2026-11-05 05:59 KST · [분석 보고서](reports/sprint/LATEST.md) · [JSON](metrics/sprint-latest.json)_
+_마지막 자동 갱신: 2026-11-09 12:14 KST · [분석 보고서](reports/sprint/LATEST.md) · [JSON](metrics/sprint-latest.json)_
 
 | 스프린트 | 기간 | 상태 | 이슈 (완료/전체) | 포인트 (완료/계획) | Cycle Time 중앙값 |
 |---|---|---|---|---|---|
 | Sprint 1 · 요구사항·설계 | 2026-10-04 ~ 2026-10-17 | 종료 | 1/9 | 1/19 | 0.1시간 |
-| Sprint 2 · 크롤러·API v1 | 2026-10-18 ~ 2026-10-31 | 종료 | 0/6 | 0/19 | - |
+| Sprint 2 · 크롤러·API v1 | 2026-10-18 ~ 2026-10-31 | 종료 | 1/6 | 2/19 | 35.8일 |
 
-Velocity **0.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0.1시간** (n=1)
+Velocity **1.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **17.9일** (n=2)
 
 ![Burndown](docs/images/burndown.png)
 
@@ -241,3 +241,75 @@ Velocity **0.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0
 - 푸시 결과는 GitHub 커밋 기록에서 확인했다.
 - 제안서에 들어간 기술 스택과 일정은 AI가 만든 초안이므로, 실제 구현 가능성과 학교 게시판의 크롤링 허용 여부(robots.txt·이용약관)는 2주차 사용자 조사 단계에서 직접 확인할 예정이다.
 - 문제정의에 실제 사용자 수치는 넣지 않았다. 근거 데이터는 인터뷰·설문 결과로 채울 예정이다.
+
+---
+
+## 10. 6주차: 오픈소스 기본 구조
+
+공개 저장소에 외부 기여자가 필요로 하는 기본 문서를 갖췄다.
+
+| 파일 | 역할 |
+|---|---|
+| [`LICENSE`](LICENSE) | MIT 라이선스. 사용·수정·재배포가 자유롭고 저작권 고지만 유지하면 된다 |
+| [`README.md`](README.md) | 문제 정의, 핵심 기능, 구조, 마일스톤, 주차별 기록 (이 문서) |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 기여 방법: 개발 환경, 브랜치·커밋·PR 규칙, 리뷰 태그(`[MUST]`/`[SHOULD]`), 크롤러 기여 규칙 |
+| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | 행동강령 (Contributor Covenant 2.0 기반, 신고 창구 포함) |
+
+함께 쓰는 협업 도구:
+
+- [Issue 템플릿](.github/ISSUE_TEMPLATE) · [PR 템플릿](.github/pull_request_template.md) · [`good first issue` 라벨](https://github.com/03jiho/noticatch/labels/good%20first%20issue)
+- [Wiki](https://github.com/03jiho/noticatch/wiki): 시작하기, 개발 가이드, 문제 해결
+- [Discussions](https://github.com/03jiho/noticatch/discussions): 질문(Q&A), 설계 제안(RFC)
+
+### 라이선스를 MIT로 정한 이유
+
+- 학생·교내 프로젝트이고 다른 학과·학교가 쉽게 가져다 쓰는 것이 목표라서, 조건이 가장 단순한 허용형 라이선스를 골랐다.
+- 특허 조항이 필요한 규모가 아니고, 파생물에 같은 라이선스를 강제할 이유도 없다.
+- 8개 라이선스를 비교하고 의존성 호환성까지 점검한 과정은 [라이선스 비교 분석](docs/open-source/license-comparison.md)에 정리했다.
+
+### 선택 과제
+
+| 문서 | 내용 |
+|---|---|
+| [라이선스 비교 분석과 선택 기준](docs/open-source/license-comparison.md) | MIT, BSD, Apache, MPL, LGPL, GPL, AGPL, Unlicense 비교, NotiCatch 의존성 호환성, MIT 선택 근거와 재검토 조건 |
+| [Inner Source 도입 로드맵](docs/open-source/inner-source-roadmap.md) | 4단계 로드맵, 역할, 성공 지표, 위험과 대응, NotiCatch 파일럿에서 갖춘 요소와 한계 |
+
+---
+
+## 11. 7주차: GitHub Actions CI/CD
+
+워크플로우 파일: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) · 실행 내역: [Actions → CI](https://github.com/03jiho/noticatch/actions/workflows/ci.yml)
+
+```
+lint ──▶ test (3 OS × 3 Python = 9개 조합) ──▶ build ──▶ deploy
+                   │                             │          ▲
+                   └ 테스트 결과 아티팩트 업로드    └ dist 아티팩트 업로드 ─┘ 다운로드
+```
+
+| 단계 | 하는 일 | 실행 시점 |
+|---|---|---|
+| `lint` | `ruff check` (규칙은 [`pyproject.toml`](pyproject.toml)) | PR, main, 태그 |
+| `test` | `pytest`를 **Ubuntu·Windows·macOS × Python 3.11·3.12·3.13** 조합으로 실행. 조합마다 JUnit 결과를 아티팩트로 올린다. 한 조합이 실패해도 나머지를 끝까지 본다(`fail-fast: false`) | PR, main, 태그 |
+| `build` | [`scripts/build_dist.py`](scripts/build_dist.py)로 배포 번들(zip)과 해시 목록(`manifest.json`)을 만들어 `dist` 아티팩트로 업로드 | PR, main, 태그 |
+| `deploy` | `dist` 아티팩트를 **내려받아** 해시로 무결성을 검증하고, 풀어서 스모크 테스트. `v*` 태그면 GitHub Release를 만들고 번들을 첨부 | main push, 태그 (PR에서는 건너뜀) |
+
+의존성은 `needs:`로 연결했다(`lint → test → build → deploy`). 앞 단계가 실패하면 뒤 단계는 실행되지 않는다.
+
+### Secrets
+
+| 시크릿 | 용도 | 비고 |
+|---|---|---|
+| `GITHUB_TOKEN` | 태그 배포 때 릴리스 생성 | Actions가 자동 발급. 릴리스를 만드는 단계에만 `env`로 전달하고, `deploy` 작업에만 `contents: write`를 준다 |
+| `NOTIFY_WEBHOOK_URL` | (선택) 배포 알림 웹훅 | 저장소 Settings → Secrets에 등록해야 동작한다. 없으면 알림만 건너뛰고 배포는 성공한다 |
+
+값은 코드에 쓰지 않고 `${{ secrets.* }}`로만 읽는다. 로그에는 `***`로 가려진다. 다른 작업의 기본 권한은 `contents: read`다.
+
+### 로컬에서 같은 검사 실행
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+ruff check .
+python3 -m pytest
+```
+
+테스트는 네트워크 없이 GitHub API 호출을 가짜로 바꿔 지표 계산, 백로그 동기화, 번들 생성·검증, 저장소 구조(백로그 데이터, 필수 문서, 워크플로우 권한)를 검사한다.

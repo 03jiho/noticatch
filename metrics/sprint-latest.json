@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T20:59:50+00:00",
+  "generated_at": "2026-11-09T03:14:37+00:00",
   "repo": "03jiho/noticatch",
   "sprints": [
     {
@@ -168,11 +168,11 @@
       "end": "2026-10-31",
       "status": "closed",
       "committed_points": 19,
-      "completed_points": 0,
+      "completed_points": 2,
       "issues_total": 6,
-      "issues_done": 0,
-      "cycle_time_median_h": null,
-      "lead_time_median_h": null,
+      "issues_done": 1,
+      "cycle_time_median_h": 859.4,
+      "lead_time_median_h": 859.4,
       "burndown": [
         {
           "date": "2026-10-18",
@@ -290,18 +290,20 @@
           "number": 15,
           "title": "pytest 설정과 CI 테스트 워크플로우",
           "points": 2,
-          "state": "open",
+          "state": "closed",
           "created_at": "2026-10-04T07:50:05Z",
-          "closed_at": null
+          "closed_at": "2026-11-09T03:14:19Z",
+          "cycle_time_h": 859.4,
+          "lead_time_h": 859.4
         }
       ]
     }
   ],
   "summary": {
     "current_sprint": null,
-    "average_velocity": 0.5,
+    "average_velocity": 1.5,
     "velocity_basis": "완료된 스프린트 평균",
-    "cycle_time_median_h": 0.1,
-    "cycle_time_samples": 1
+    "cycle_time_median_h": 429.8,
+    "cycle_time_samples": 2
   }
 }
