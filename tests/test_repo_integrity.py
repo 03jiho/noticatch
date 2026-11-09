@@ -166,3 +166,10 @@ def test_benchmark_step_names_match_the_timing_parser():
     doc = yaml.safe_load((ROOT / ".github/workflows/cache-benchmark.yml").read_text(encoding="utf-8"))
     names = {s.get("name") for s in doc["jobs"]["bench"]["steps"]}
     assert {"Install without cache", "Restore pip cache", "Install with restored cache"} <= names
+
+
+@pytest.mark.parametrize("path", sorted(ROOT.glob("requirements*.txt")), ids=lambda p: p.name)
+def test_requirements_files_are_ascii(path):
+    """Windows 의 Python 3.11 에 들어 있는 pip 24.0 은 BOM 없는 파일을 시스템 인코딩(cp1252)으로 읽는다.
+    한글 주석이 있으면 새 가상환경의 pip 가 UnicodeDecodeError 로 실패한다. (CI Windows py3.11 에서 실제로 발생)"""
+    path.read_bytes().decode("ascii")
