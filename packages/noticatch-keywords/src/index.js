@@ -8,9 +8,13 @@
  *   // => { matched: true, hits: ["장학"] }
  */
 
-/** 비교용 문자열: 앞뒤 공백 제거 + 소문자. */
+/**
+ * 비교용 문자열: 유니코드 정규화(NFC) + 앞뒤 공백 제거 + 소문자.
+ * 같은 한글도 저장 방식에 따라 글자 코드가 다를 수 있다(조합형 NFC, 분해형 NFD).
+ * 맥OS 파일 이름이나 일부 웹페이지는 분해형이라 정규화하지 않으면 키워드를 찾지 못한다.
+ */
 function normalize(text) {
-  return String(text ?? "").trim().toLowerCase();
+  return String(text ?? "").normalize("NFC").trim().toLowerCase();
 }
 
 function keywordList(value) {

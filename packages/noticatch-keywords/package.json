@@ -1,6 +1,6 @@
 {
   "name": "@03jiho/noticatch-keywords",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NotiCatch 키워드 구독 규칙(포함/제외 키워드)으로 공지를 걸러 주는 작은 라이브러리",
   "type": "module",
   "main": "./src/index.js",
