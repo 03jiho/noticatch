@@ -273,3 +273,43 @@ Velocity **0.5 pts** (완료된 스프린트 평균) · Cycle Time 중앙값 **0
 |---|---|
 | [라이선스 비교 분석과 선택 기준](docs/open-source/license-comparison.md) | MIT, BSD, Apache, MPL, LGPL, GPL, AGPL, Unlicense 비교, NotiCatch 의존성 호환성, MIT 선택 근거와 재검토 조건 |
 | [Inner Source 도입 로드맵](docs/open-source/inner-source-roadmap.md) | 4단계 로드맵, 역할, 성공 지표, 위험과 대응, NotiCatch 파일럿에서 갖춘 요소와 한계 |
+
+---
+
+## 11. 7주차: GitHub Actions CI/CD
+
+워크플로우 파일: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) · 실행 내역: [Actions → CI](https://github.com/03jiho/noticatch/actions/workflows/ci.yml)
+
+```
+lint ──▶ test (3 OS × 3 Python = 9개 조합) ──▶ build ──▶ deploy
+                   │                             │          ▲
+                   └ 테스트 결과 아티팩트 업로드    └ dist 아티팩트 업로드 ─┘ 다운로드
+```
+
+| 단계 | 하는 일 | 실행 시점 |
+|---|---|---|
+| `lint` | `ruff check` (규칙은 [`pyproject.toml`](pyproject.toml)) | PR, main, 태그 |
+| `test` | `pytest`를 **Ubuntu·Windows·macOS × Python 3.11·3.12·3.13** 조합으로 실행. 조합마다 JUnit 결과를 아티팩트로 올린다. 한 조합이 실패해도 나머지를 끝까지 본다(`fail-fast: false`) | PR, main, 태그 |
+| `build` | [`scripts/build_dist.py`](scripts/build_dist.py)로 배포 번들(zip)과 해시 목록(`manifest.json`)을 만들어 `dist` 아티팩트로 업로드 | PR, main, 태그 |
+| `deploy` | `dist` 아티팩트를 **내려받아** 해시로 무결성을 검증하고, 풀어서 스모크 테스트. `v*` 태그면 GitHub Release를 만들고 번들을 첨부 | main push, 태그 (PR에서는 건너뜀) |
+
+의존성은 `needs:`로 연결했다(`lint → test → build → deploy`). 앞 단계가 실패하면 뒤 단계는 실행되지 않는다.
+
+### Secrets
+
+| 시크릿 | 용도 | 비고 |
+|---|---|---|
+| `GITHUB_TOKEN` | 태그 배포 때 릴리스 생성 | Actions가 자동 발급. 릴리스를 만드는 단계에만 `env`로 전달하고, `deploy` 작업에만 `contents: write`를 준다 |
+| `NOTIFY_WEBHOOK_URL` | (선택) 배포 알림 웹훅 | 저장소 Settings → Secrets에 등록해야 동작한다. 없으면 알림만 건너뛰고 배포는 성공한다 |
+
+값은 코드에 쓰지 않고 `${{ secrets.* }}`로만 읽는다. 로그에는 `***`로 가려진다. 다른 작업의 기본 권한은 `contents: read`다.
+
+### 로컬에서 같은 검사 실행
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+ruff check .
+python3 -m pytest
+```
+
+테스트는 네트워크 없이 GitHub API 호출을 가짜로 바꿔 지표 계산, 백로그 동기화, 번들 생성·검증, 저장소 구조(백로그 데이터, 필수 문서, 워크플로우 권한)를 검사한다.
