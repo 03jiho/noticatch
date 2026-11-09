@@ -63,14 +63,14 @@ def do(method: str, path: str, body: dict | None = None):
 
 
 def sync_labels(cfg: dict) -> None:
-    existing = {l["name"]: l for l in all_pages(f"/repos/{REPO}/labels")}
-    for l in cfg["labels"]:
-        want = {"name": l["name"], "color": l["color"], "description": l.get("description", "")}
-        cur = existing.get(l["name"])
+    existing = {lb["name"]: lb for lb in all_pages(f"/repos/{REPO}/labels")}
+    for label in cfg["labels"]:
+        want = {"name": label["name"], "color": label["color"], "description": label.get("description", "")}
+        cur = existing.get(label["name"])
         if cur is None:
             do("POST", f"/repos/{REPO}/labels", want)
         elif cur["color"].lower() != want["color"].lower() or (cur.get("description") or "") != want["description"]:
-            do("PATCH", f"/repos/{REPO}/labels/{urllib.parse.quote(l['name'])}", want)
+            do("PATCH", f"/repos/{REPO}/labels/{urllib.parse.quote(label['name'])}", want)
     for name in cfg.get("remove", []):
         if name in existing:
             do("DELETE", f"/repos/{REPO}/labels/{urllib.parse.quote(name)}")

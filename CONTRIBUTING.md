@@ -23,7 +23,7 @@ NotiCatch에 관심 가져 주셔서 감사합니다. 이 문서는 기여를 �
 
 ## 개발 환경
 
-필요한 것: Git, Python 3.12 이상.
+필요한 것: Git, Python 3.11 이상.
 
 ```bash
 # 1. 저장소를 Fork한 뒤 내 계정의 주소로 clone
@@ -44,7 +44,17 @@ git remote add upstream https://github.com/03jiho/noticatch.git
 
 > 지표 스크립트는 `README.md`의 자동 갱신 구간, `metrics/`, `reports/`, `docs/images/`를 덮어씁니다. 연습으로 돌렸다면 커밋하지 마세요. 이 파일들은 GitHub Actions가 갱신하므로 직접 고치지 않습니다.
 
-테스트 도구(pytest)는 이슈 [#15](https://github.com/03jiho/noticatch/issues/15)에서 구성할 예정입니다. 자세한 실행 방법과 문제 해결은 Wiki의 [시작하기](https://github.com/03jiho/noticatch/wiki/Getting-Started), [문제 해결](https://github.com/03jiho/noticatch/wiki/Troubleshooting)을 보세요.
+### 테스트와 Lint
+
+PR을 열기 전에 로컬에서 CI와 같은 검사를 실행해 주세요. CI는 Ubuntu·Windows·macOS와 Python 3.11~3.13 조합에서 같은 검사를 돌립니다.
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+ruff check .          # Lint (규칙: pyproject.toml)
+python3 -m pytest     # 테스트 (네트워크 불필요)
+```
+
+자세한 실행 방법과 문제 해결은 Wiki의 [시작하기](https://github.com/03jiho/noticatch/wiki/Getting-Started), [문제 해결](https://github.com/03jiho/noticatch/wiki/Troubleshooting)을 보세요.
 
 ## 작업 순서 (GitHub Flow)
 
