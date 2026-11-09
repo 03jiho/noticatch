@@ -189,17 +189,20 @@ jobs:
             // 같은 제목을 사람이 만든 이슈가 있으면 건드리지 않는다.
             if (existing && existing.user.type !== 'Bot') return core.info(`같은 제목의 사용자 이슈가 있어 건너뜀: ${title}`);
 
-            // 요약 이슈 자신(봇이 만든 이슈)은 집계에서 뺀다.
+            // 요약 이슈 자신은 집계에서 뺀다. 작성자(봇)로는 구분할 수 없다: 백로그 이슈도 bootstrap-backlog 봇이 만들었다.
+            // 그래서 요약 이슈에만 붙이는 전용 라벨로 구분한다.
+            const SUMMARY_LABEL = 'report: weekly';
+            const notSummary = `-label:"${SUMMARY_LABEL}"`;
             const count = async q => {
               await sleep(delay);
               return (await search(`repo:${repo} ${q}`)).data.total_count;
             };
 
-            const opened = await count(`is:issue created:>=${since} -author:app/github-actions`);
-            const closed = await count(`is:issue closed:>=${since} -author:app/github-actions`);
+            const opened = await count(`is:issue created:>=${since} ${notSummary}`);
+            const closed = await count(`is:issue closed:>=${since} ${notSummary}`);
             const prOpened = await count(`is:pr created:>=${since}`);
             const prMerged = await count(`is:pr is:merged merged:>=${since}`);
-            const openNow = await count('is:issue is:open -author:app/github-actions');
+            const openNow = await count(`is:issue is:open ${notSummary}`);
             const breached = await count('is:issue is:open label:"sla: breached"');
 
             let discussionLine = '비활성 또는 조회 실패';
@@ -231,12 +234,20 @@ jobs:
               '지표 상세는 [대시보드](https://' + context.repo.owner + '.github.io/' + context.repo.repo + '/)와 `reports/` 폴더를 참고하세요.',
             ].join('\n');
 
+            try {
+              await github.rest.issues.createLabel({
+                ...context.repo, name: SUMMARY_LABEL, color: 'ededed',
+                description: '주간 요약 자동 생성 이슈 (집계에서 제외)',
+              });
+            } catch (e) { if (e.status !== 422) throw e; }   // 이미 있으면 무시
             if (existing) {
               // 같은 주를 다시 실행하면(수동 실행 등) 새 이슈를 만들지 않고 숫자를 갱신한다.
+              // 라벨이 없던 예전 요약 이슈에도 라벨을 붙인다.
               await github.rest.issues.update({ ...context.repo, issue_number: existing.number, body });
+              await github.rest.issues.addLabels({ ...context.repo, issue_number: existing.number, labels: [SUMMARY_LABEL] });
               return core.info(`갱신: ${existing.html_url}`);
             }
             const created = await github.rest.issues.create({
-              ...context.repo, title, body, labels: ['type: chore'],
+              ...context.repo, title, body, labels: ['type: chore', SUMMARY_LABEL],
             });
             core.info(`생성: ${created.data.html_url}`);
