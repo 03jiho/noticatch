@@ -330,3 +330,15 @@ python3 -m pytest
 솔직한 한계도 리포트에 적었다. 코드 변경 PR의 *첫 실행*은 변경 감지 작업과 캐시 저장 비용 때문에 실행 구간이 오히려 16.4% 늘었고(55초 → 64초), 캐시가 채워진 뒤에는 48초로 줄었다. 시간은 1초 단위로만 측정된다.
 
 측정 도구는 [`scripts/ci_timing.py`](scripts/ci_timing.py)이고, 리포트의 숫자는 실행 번호만 있으면 누구나 다시 계산할 수 있다.
+
+## 13. 9주차: GitHub Packages 및 의존성 보안 자동화
+
+패키지 배포, 컨테이너 이미지, 의존성 업데이트, 보안 스캔을 모두 Actions 로 자동화했다.
+**정리 문서: [`docs/ci/package-security-report.md`](docs/ci/package-security-report.md)**
+
+| 요구 | 구현 | 확인 방법 |
+|---|---|---|
+| npm 패키지를 GitHub Packages 에 배포, 버전 업데이트 | [`@03jiho/noticatch-keywords`](packages/noticatch-keywords) 를 [`publish-package.yml`](.github/workflows/publish-package.yml) 이 배포한다. 아직 배포되지 않은 버전만 올리고, 배포 뒤 빈 폴더에서 레지스트리로 다시 설치해 실행한다 | [Packages 페이지](https://github.com/03jiho/noticatch/packages) 에서 1.0.0 → 1.0.1 |
+| Docker 이미지 자동 빌드/푸시, 로컬 실행 검증 | [`Dockerfile`](Dockerfile) + [`docker.yml`](.github/workflows/docker.yml) 이 빌드 → 실행 검증 → `ghcr.io` 푸시 → 푸시한 이미지를 다시 받아 실행 검증을 한다. 같은 검사를 [`scripts/docker_smoke.sh`](scripts/docker_smoke.sh) 로 내 컴퓨터에서도 할 수 있다 | `docker run --rm -p 8080:8080 ghcr.io/03jiho/noticatch-dashboard:latest` |
+| Dependabot 정책 | [`dependabot.yml`](.github/dependabot.yml): 주 1회(월 09:00 KST), 마이너·패치는 그룹으로, 메이저는 따로. 자동 머지는 [`dependabot_automerge.py`](scripts/dependabot_automerge.py) 가 조건(패치 / 개발용·Actions 마이너, 메이저 제외, 검사 전부 통과)을 보고 결정한다 | 테스트 15개 |
+| 보안 스캔을 이슈·리포트로 자동화 | [`security-audit.yml`](.github/workflows/security-audit.yml): npm audit (+ `SNYK_TOKEN` 이 있으면 Snyk) → 보고서 아티팩트·Job Summary → 취약점이 있으면 `security` 이슈를 열고 없어지면 닫는다 | 테스트 10개 |

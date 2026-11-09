@@ -1,0 +1,81 @@
+# npm 패키지(packages/noticatch-keywords) 검사: Node 버전별 테스트 + 패키징 확인 + (PR) 버전 올림 확인
+name: Package CI
+
+on:
+  pull_request:
+    paths:
+      - "packages/**"
+      - ".github/workflows/package.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - ".github/workflows/package.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PKG_DIR: packages/noticatch-keywords
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Run tests
+        working-directory: ${{ env.PKG_DIR }}
+        run: npm test
+      - name: Check package contents
+        working-directory: ${{ env.PKG_DIR }}
+        run: |
+          npm pack --dry-run --json > pack.json
+          node -e "
+            const files = JSON.parse(require('fs').readFileSync('pack.json'))[0].files.map(f => f.path).sort();
+            console.log(files.join('\n'));
+            const bad = files.filter(f => f.startsWith('test/') || f.includes('node_modules'));
+            if (bad.length) { console.error('배포 파일에 들어가면 안 되는 것:', bad); process.exit(1); }
+            if (!files.includes('src/index.js')) { console.error('src/index.js 가 없다'); process.exit(1); }
+          "
+          rm pack.json
+
+  version-bump:
+    name: version bump check
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # 배포되는 코드(src/)가 바뀌면 package.json 의 version 도 올라가야 한다.
+      # 같은 버전을 다시 배포할 수는 없기 때문이다.
+      - name: Require a version bump when src/ changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "$BASE_SHA"...HEAD -- "$PKG_DIR/src"; then
+            echo "src/ 변경 없음 — 버전 확인을 건너뜁니다."
+            exit 0
+          fi
+          old=$(git show "$BASE_SHA:$PKG_DIR/package.json" 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" || echo "")
+          new=$(node -p "require('./$PKG_DIR/package.json').version")
+          echo "base=$old head=$new"
+          if [ -z "$old" ]; then echo "새 패키지입니다."; exit 0; fi
+          if [ "$old" = "$new" ]; then
+            echo "::error::src/ 가 바뀌었는데 version 이 그대로($new)입니다. package.json 의 version 을 올려 주세요."
+            exit 1
+          fi

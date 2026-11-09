@@ -1,0 +1,123 @@
+# npm 패키지를 GitHub Packages(npm.pkg.github.com)에 배포한다.
+#
+# - main 에 패키지 변경이 합쳐지면 실행한다. package.json 의 version 이 아직 배포되지 않았을 때만 올린다.
+#   (1.0.0 배포 후 코드를 고치고 version 을 1.0.1 로 올려 합치면 1.0.1 이 배포된다.)
+# - 이미 배포된 버전이면 건너뛰므로 여러 번 실행해도 안전하다.
+# - 배포 뒤 다른 빈 폴더에서 레지스트리로 다시 설치해 실제로 쓸 수 있는지 확인한다.
+#
+# 인증: secrets.GITHUB_TOKEN (packages: write). 별도 토큰을 만들 필요가 없다.
+name: Publish Package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/noticatch-keywords/**"
+      - ".github/workflows/publish-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 같은 버전을 동시에 두 번 올리지 않도록 줄 세운다.
+concurrency:
+  group: publish-package
+  cancel-in-progress: false
+
+env:
+  PKG_DIR: packages/noticatch-keywords
+  REGISTRY: https://npm.pkg.github.com
+
+jobs:
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write   # 패키지 올리기에만 필요하다.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: ${{ env.REGISTRY }}
+          scope: "@03jiho"
+
+      - name: Test
+        working-directory: ${{ env.PKG_DIR }}
+        run: npm test
+
+      - name: Read name and version
+        id: pkg
+        working-directory: ${{ env.PKG_DIR }}
+        run: |
+          echo "name=$(node -p "require('./package.json').name")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version is already published
+        id: exists
+        working-directory: ${{ env.PKG_DIR }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          if npm view "$NAME@$VERSION" version > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION 은 이미 배포되어 있습니다."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION 은 아직 배포되지 않았습니다."
+          fi
+
+      - name: Publish
+        if: ${{ steps.exists.outputs.published == 'false' }}
+        working-directory: ${{ env.PKG_DIR }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish
+
+      # 배포된 패키지를 빈 프로젝트에서 설치해 실제로 불러 본다.
+      - name: Verify install from the registry
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          dir=$(mktemp -d)
+          cd "$dir"
+          printf '@03jiho:registry=%s\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' "$REGISTRY" > .npmrc
+          npm init -y > /dev/null
+          # 배포 직후에는 레지스트리에 보이기까지 몇 초 걸릴 수 있어 재시도한다.
+          for i in 1 2 3 4 5; do
+            npm install "$NAME@$VERSION" && break
+            echo "설치 재시도 ($i/5)"; sleep 5
+          done
+          installed=$(node -p "require('./node_modules/$NAME/package.json').version")
+          test "$installed" = "$VERSION"
+          cat > check.mjs <<'JS'
+          import { matchNotice } from "@03jiho/noticatch-keywords";
+          const r = matchNotice({ title: "2026 국가근로장학생 모집" }, { include: ["장학"], exclude: ["대학원"] });
+          if (!r.matched) throw new Error("설치한 패키지가 기대대로 동작하지 않습니다");
+          console.log("설치·실행 확인 완료:", JSON.stringify(r));
+          JS
+          node check.mjs
+
+      - name: Summary
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+          PUBLISHED_BEFORE: ${{ steps.exists.outputs.published }}
+        run: |
+          {
+            echo "### GitHub Packages 배포"
+            echo ""
+            if [ "$PUBLISHED_BEFORE" = "true" ]; then
+              echo "- \`$NAME@$VERSION\` 은 이미 배포된 버전이라 새로 올리지 않았습니다."
+            else
+              echo "- \`$NAME@$VERSION\` 을 배포했습니다."
+            fi
+            echo "- 패키지 목록: https://github.com/${GITHUB_REPOSITORY}/packages"
+            echo "- 설치 후 실행 확인: 통과"
+          } >> "$GITHUB_STEP_SUMMARY"

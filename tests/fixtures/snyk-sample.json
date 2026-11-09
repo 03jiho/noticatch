@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "dependencyCount": 2,
+  "vulnerabilities": [
+    {"id": "SNYK-JS-LODASH-567746", "title": "Prototype Pollution", "severity": "high", "packageName": "lodash", "version": "4.17.15", "fixedIn": ["4.17.16"]},
+    {"id": "SNYK-JS-LODASH-567746", "title": "Prototype Pollution", "severity": "high", "packageName": "lodash", "version": "4.17.15", "fixedIn": ["4.17.16"]},
+    {"id": "SNYK-JS-AXIOS-1038255", "title": "Server-Side Request Forgery", "severity": "medium", "packageName": "axios", "version": "0.21.0", "fixedIn": []}
+  ]
+}

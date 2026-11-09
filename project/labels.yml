@@ -74,6 +74,9 @@ labels:
   - name: "incident"
     color: "000000"
     description: 운영 장애 (DORA MTTR 계산에 사용)
+  - name: "security"
+    color: "b60205"
+    description: 보안 스캔(npm audit/Snyk) 결과와 취약점 대응
 
 
 # GitHub 기본 라벨 중 위 체계와 겹치는 것은 삭제

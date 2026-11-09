@@ -1,0 +1,89 @@
+# Dependabot 정책: 무엇을, 언제, 어떻게 묶어서 올릴지 정한다.
+#
+# - 스케줄: 매주 월요일 오전 9시(KST). 요일·시간을 정해 두면 리뷰 부담이 한꺼번에 몰리지 않는다.
+# - 그룹:   마이너·패치 업데이트는 한 PR 로 묶는다. 메이저는 호환성 문제가 있을 수 있어 따로 올린다.
+# - 쿨다운: 새 버전이 나오고 3일(메이저는 14일)이 지난 뒤에 올린다. 막 올라온 악성·결함 버전을 피한다.
+# - 자동 머지: 이 파일이 아니라 .github/workflows/dependabot-automerge.yml 과
+#   scripts/dependabot_automerge.py 가 정한다. (패치는 CI 통과 시 자동, 마이너는 개발용·Actions 만, 메이저는 사람이 확인)
+version: 2
+
+updates:
+  # npm: 배포하는 패키지(@03jiho/noticatch-keywords)의 의존성
+  - package-ecosystem: npm
+    directory: /packages/noticatch-keywords
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    labels: ["type: chore", "area: infra"]
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    groups:
+      npm-dev:
+        dependency-type: development
+        update-types: [minor, patch]
+      npm-prod-patch:
+        dependency-type: production
+        update-types: [patch]
+
+  # GitHub Actions: 워크플로우에서 쓰는 액션(actions/checkout 등)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    labels: ["type: chore", "area: infra"]
+    commit-message:
+      prefix: "ci(deps)"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # Docker: Dockerfile 의 베이스 이미지
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 3
+    labels: ["type: chore", "area: infra"]
+    commit-message:
+      prefix: "build(deps)"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+
+  # Python: 테스트·린트·스크립트용 의존성(requirements-*.txt)
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    labels: ["type: chore", "area: infra"]
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    groups:
+      python:
+        update-types: [minor, patch]

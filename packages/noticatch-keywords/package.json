@@ -1,0 +1,41 @@
+{
+  "name": "@03jiho/noticatch-keywords",
+  "version": "1.0.0",
+  "description": "NotiCatch 키워드 구독 규칙(포함/제외 키워드)으로 공지를 걸러 주는 작은 라이브러리",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "noticatch",
+    "notice",
+    "keyword",
+    "filter"
+  ],
+  "license": "MIT",
+  "author": "03jiho",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/03jiho/noticatch.git",
+    "directory": "packages/noticatch-keywords"
+  },
+  "bugs": {
+    "url": "https://github.com/03jiho/noticatch/issues"
+  },
+  "homepage": "https://github.com/03jiho/noticatch/tree/main/packages/noticatch-keywords#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
