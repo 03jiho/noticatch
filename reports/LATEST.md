@@ -1,7 +1,7 @@
 # DORA 주간 보고서 2026-W46
 
 - 저장소: `03jiho/noticatch`
-- 생성 시각: 2026-11-09 12:29 (KST), GitHub Actions 자동 생성
+- 생성 시각: 2026-11-09 13:49 (KST), GitHub Actions 자동 생성
 - 집계 기간: 최근 30일 / 배포 기준 워크플로우: `deploy-pages.yml`
 
 ## 요약
