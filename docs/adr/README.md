@@ -28,5 +28,5 @@
 
 | 번호 | 제목 | 상태 | 날짜 |
 |---|---|---|---|
-| [0001](0001-record-architecture-decisions.md) | 기술 결정을 ADR로 기록한다 | Proposed | 2026-11-05 |
+| [0001](0001-record-architecture-decisions.md) | 기술 결정을 ADR로 기록한다 | Accepted | 2026-11-05 |
 | [0002](0002-github-flow-and-conventional-commits.md) | GitHub Flow, Conventional Commits, Squash merge를 쓴다 | Accepted | 2026-11-05 |
