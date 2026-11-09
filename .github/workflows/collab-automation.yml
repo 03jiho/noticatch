@@ -165,9 +165,26 @@ jobs:
             const sleep = ms => new Promise(r => setTimeout(r, ms));
             const delay = Number(process.env.SEARCH_DELAY_MS ?? 2000);
 
-            const dup = await github.rest.search.issuesAndPullRequests({
-              q: `repo:${repo} is:issue in:title "${title}"`, per_page: 1,
-            });
+            // 간격을 둬도 보조 속도 제한(403)이 날 수 있다. github-script 는 403 을 재시도하지 않으므로
+            // 응답의 retry-after(없으면 60초)만큼 기다렸다가 최대 4번 시도한다. 월요일에는 SLA 점검과
+            // 주간 요약이 같은 시각에 함께 돌아서 같은 토큰으로 요청이 몰린다.
+            const retryWait = Number(process.env.RETRY_WAIT_MS ?? 60000);
+            const search = async q => {
+              for (let attempt = 1; ; attempt++) {
+                try {
+                  return await github.rest.search.issuesAndPullRequests({ q, per_page: 1 });
+                } catch (e) {
+                  const limited = (e.status === 403 || e.status === 429) && /rate limit/i.test(e.message || '');
+                  if (!limited || attempt >= 4) throw e;
+                  const after = Number(e.response?.headers?.['retry-after']);
+                  const wait = after > 0 ? after * 1000 : retryWait;
+                  core.info(`속도 제한: ${Math.round(wait / 1000)}초 뒤 재시도 (${attempt}/3)`);
+                  await sleep(wait);
+                }
+              }
+            };
+
+            const dup = await search(`repo:${repo} is:issue in:title "${title}"`);
             const existing = dup.data.items[0];
             // 같은 제목을 사람이 만든 이슈가 있으면 건드리지 않는다.
             if (existing && existing.user.type !== 'Bot') return core.info(`같은 제목의 사용자 이슈가 있어 건너뜀: ${title}`);
@@ -175,9 +192,7 @@ jobs:
             // 요약 이슈 자신(봇이 만든 이슈)은 집계에서 뺀다.
             const count = async q => {
               await sleep(delay);
-              return (await github.rest.search.issuesAndPullRequests({
-                q: `repo:${repo} ${q}`, per_page: 1,
-              })).data.total_count;
+              return (await search(`repo:${repo} ${q}`)).data.total_count;
             };
 
             const opened = await count(`is:issue created:>=${since} -author:app/github-actions`);
