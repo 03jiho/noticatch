@@ -7,7 +7,7 @@
 # 7주차에 만든 파이프라인을 8주차에 다음처럼 최적화했다. 전후 비교는 docs/ci/optimization-report.md
 #  - 재사용: setup-python + pip 캐시 + 설치를 Composite Action(.github/actions/setup-python-env)으로,
 #            matrix 테스트를 Reusable Workflow(.github/workflows/python-tests.yml)로 묶었다.
-#  - 캐싱:   Composite Action 안에서 pip 캐시를 쓴다. 효과는 cache-benchmark.yml 로 측정한다.
+#  - 캐싱:   Composite Action 이 설치가 끝난 가상환경(.venv)을 캐시한다. 전략별 효과는 cache-benchmark.yml 로 측정했다.
 #  - 조건부: scripts/changed_paths.py 가 변경 파일을 보고 lint·test·build 실행 여부를 정한다.
 #            문서만 바뀐 PR 은 무거운 단계를 건너뛴다. deploy 는 main 과 v* 태그 push(또는 수동 지정)에서만 실행한다.
 #

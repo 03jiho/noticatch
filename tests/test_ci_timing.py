@@ -136,7 +136,7 @@ def test_cli_markdown_and_json_outputs(tmp_path, monkeypatch):
 
 def test_cli_pipeline_pairs(tmp_path, monkeypatch):
     by_run = {1: [job("Lint (ruff)", 0, 10)], 2: [job("Lint (ruff)", 0, 5)]}
-    monkeypatch.setattr(ct, "fetch_jobs", lambda run_id: by_run[run_id])
+    monkeypatch.setattr(ct, "fetch_jobs", lambda run_id, attempt=None: by_run[run_id])
     js = tmp_path / "p.json"
     ct.main(["pipeline", "--pair", "코드 변경 PR|1|2", "--json", str(js)])
     assert '"wall_pct": 50.0' in js.read_text(encoding="utf-8")
@@ -149,3 +149,20 @@ def test_cli_bench_pools_samples_from_several_runs(tmp_path, monkeypatch):
     ct.main(["bench", "--run", "1", "--run", "2", "--json", str(js)])
     text = js.read_text(encoding="utf-8")
     assert '"samples": 2' in text and '"cold": 15.0' in text  # 10 과 20 의 중앙값
+
+
+@pytest.mark.parametrize(("ref", "expected"), [("123", (123, None)), ("123@2", (123, 2)), ("7@1", (7, 1))])
+def test_parse_run_ref(ref, expected):
+    assert ct.parse_run_ref(ref) == expected
+
+
+def test_cli_pipeline_accepts_attempt_numbers(tmp_path, monkeypatch):
+    seen = []
+
+    def fake(run_id, attempt=None):
+        seen.append((run_id, attempt))
+        return [job("Lint (ruff)", 0, 10)]
+
+    monkeypatch.setattr(ct, "fetch_jobs", fake)
+    ct.main(["pipeline", "--pair", "x|5|6@2"])
+    assert seen == [(5, None), (6, 2)]

@@ -189,10 +189,17 @@ def api_get(path: str, params: dict | None = None):
         return json.load(res)
 
 
-def fetch_jobs(run_id: int) -> list[dict]:
+def parse_run_ref(ref: str) -> tuple[int, int | None]:
+    """`123` 또는 `123@2`(2번째 시도) 형식의 실행 지정을 (실행 번호, 시도 번호) 로 바꾼다."""
+    run_id, _, attempt = ref.partition("@")
+    return int(run_id), int(attempt) if attempt else None
+
+
+def fetch_jobs(run_id: int, attempt: int | None = None) -> list[dict]:
+    base = f"/repos/{REPO}/actions/runs/{run_id}" + (f"/attempts/{attempt}" if attempt else "")
     jobs, page = [], 1
     while True:
-        data = api_get(f"/repos/{REPO}/actions/runs/{run_id}/jobs", {"per_page": 100, "page": page})
+        data = api_get(f"{base}/jobs", {"per_page": 100, "page": page})
         jobs += data["jobs"]
         if len(data["jobs"]) < 100:
             return jobs
@@ -226,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--run", type=int, action="append", required=True,
                    help="여러 번 지정하면 여러 실행의 샘플을 합쳐 중앙값을 낸다")
     p = sub.add_parser("pipeline")
-    p.add_argument("--pair", action="append", required=True, metavar="이름|전RUN|후RUN")
+    p.add_argument("--pair", action="append", required=True, metavar="이름|전RUN|후RUN", help="RUN 은 123 또는 123@시도번호")
     h = sub.add_parser("history")
     h.add_argument("--workflow", required=True)
     h.add_argument("--step", required=True)
@@ -244,10 +251,10 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd == "pipeline":
         pairs = []
         for spec in args.pair:
-            name, before_id, after_id = spec.split("|")
-            pairs.append({"name": name, "before_id": int(before_id), "after_id": int(after_id),
-                          "before": run_stats(fetch_jobs(int(before_id))),
-                          "after": run_stats(fetch_jobs(int(after_id)))})
+            name, before_ref, after_ref = spec.split("|")
+            pairs.append({"name": name, "before_id": before_ref, "after_id": after_ref,
+                          "before": run_stats(fetch_jobs(*parse_run_ref(before_ref))),
+                          "after": run_stats(fetch_jobs(*parse_run_ref(after_ref)))})
         text = render_pipeline(pairs)
         data = {"pairs": [{**x, "compare": compare_runs(x["before"], x["after"])} for x in pairs]}
     else:
