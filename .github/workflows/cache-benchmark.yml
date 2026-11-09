@@ -30,7 +30,8 @@ concurrency:
 
 jobs:
   bench:
-    name: Bench (${{ matrix.os }}, ${{ matrix.case }}, #${{ matrix.n }})
+    # 따옴표가 필요하다. 따옴표가 없으면 ` #` 부터 YAML 주석으로 읽혀 이름이 잘린다.
+    name: "Bench (${{ matrix.os }}, ${{ matrix.case }}, #${{ matrix.n }})"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:

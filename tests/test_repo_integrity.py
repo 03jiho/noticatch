@@ -146,3 +146,23 @@ def test_deploy_is_limited_to_push_or_manual_runs():
     condition = ci["jobs"]["deploy"]["if"]
     assert "github.event_name == 'push'" in condition and "pull_request" not in condition
     assert ci["jobs"]["deploy"]["needs"] == "build"
+
+
+def test_benchmark_job_name_matches_the_timing_parser():
+    """잡 이름의 ` #` 이 YAML 주석으로 읽혀 이름이 잘리면 ci_timing 이 샘플을 하나도 못 찾는다."""
+    import re
+
+    import ci_timing
+
+    doc = yaml.safe_load((ROOT / ".github/workflows/cache-benchmark.yml").read_text(encoding="utf-8"))
+    template = doc["jobs"]["bench"]["name"]
+    name = re.sub(r"\$\{\{\s*matrix\.(\w+)\s*\}\}", lambda m: {"os": "ubuntu-latest", "case": "dev", "n": "2"}[m[1]], template)
+    match = ci_timing.BENCH_JOB.fullmatch(name)
+    assert match, f"집계 정규식과 맞지 않는 잡 이름: {name!r}"
+    assert (match["os"], match["case"], match["n"]) == ("ubuntu-latest", "dev", "2")
+
+
+def test_benchmark_step_names_match_the_timing_parser():
+    doc = yaml.safe_load((ROOT / ".github/workflows/cache-benchmark.yml").read_text(encoding="utf-8"))
+    names = {s.get("name") for s in doc["jobs"]["bench"]["steps"]}
+    assert {"Install without cache", "Restore pip cache", "Install with restored cache"} <= names
