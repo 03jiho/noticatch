@@ -52,3 +52,19 @@ test("filterNotices 는 원래 순서를 유지하며 걸러 낸다", () => {
 test("filterNotices 는 목록이 없어도 빈 배열을 돌려준다", () => {
   assert.deepEqual(filterNotices(undefined, { include: ["x"] }), []);
 });
+
+test("분해형(NFD)으로 저장된 한글 공지도 조합형(NFC) 키워드로 찾는다", () => {
+  const nfd = "국가근로장학생 모집".normalize("NFD");
+  assert.notEqual(nfd, "국가근로장학생 모집"); // 글자 코드가 실제로 다르다
+  assert.equal(matchNotice({ title: nfd }, { include: ["장학"] }).matched, true);
+});
+
+test("키워드가 분해형이어도 조합형 공지와 일치한다", () => {
+  const r = matchNotice({ title: "교환학생 지원 안내" }, { include: ["교환학생".normalize("NFD")] });
+  assert.equal(r.matched, true);
+});
+
+test("분해형 제외 키워드도 적용된다", () => {
+  const r = matchNotice({ title: "대학원 장학생" }, { include: ["장학"], exclude: ["대학원".normalize("NFD")] });
+  assert.equal(r.matched, false);
+});
