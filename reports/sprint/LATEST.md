@@ -1,6 +1,6 @@
 # 스프린트 분석 보고서
 
-- 생성: 2026-11-10 08:39 KST (GitHub Actions 자동 생성)
+- 생성: 2026-11-11 06:07 KST (GitHub Actions 자동 생성)
 - 현재 스프린트: 없음
 - Velocity: 1.5 pts (완료된 스프린트 평균)
 - Cycle Time 중앙값: 17.9일 (완료 이슈 2개)
