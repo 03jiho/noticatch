@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-16T04:55:16+00:00",
+  "generated_at": "2026-11-23T05:55:16+00:00",
   "repo": "03jiho/noticatch",
   "window_days": 30,
   "deploy_workflow": "deploy-pages.yml",
@@ -29,15 +29,6 @@
     "mttr": "N/A"
   },
   "weekly": [
-    {
-      "week": "2026-W40",
-      "start": "2026-09-28",
-      "deploys": 4,
-      "failed": 0,
-      "lead_time_median_h": 0.01,
-      "change_failure_rate": 0.0,
-      "mttr_median_h": null
-    },
     {
       "week": "2026-W41",
       "start": "2026-10-05",
@@ -95,6 +86,15 @@
     {
       "week": "2026-W47",
       "start": "2026-11-16",
+      "deploys": 0,
+      "failed": 0,
+      "lead_time_median_h": null,
+      "change_failure_rate": null,
+      "mttr_median_h": null
+    },
+    {
+      "week": "2026-W48",
+      "start": "2026-11-23",
       "deploys": 0,
       "failed": 0,
       "lead_time_median_h": null,
