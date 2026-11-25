@@ -1,0 +1,49 @@
+# A/B 실험(experiments/cta-style.json)의 하루치 지표를 수집해 metrics/experiment-daily.jsonl 에 기록한다.
+# 실험 기간(2026-11-26 ~ 12-09) 밖에서는 아무것도 기록하지 않는다. 지표는 가상 페르소나 기반 합성 데이터다.
+name: Experiment Daily
+
+on:
+  schedule:
+    - cron: "50 14 * * *"      # 매일 23:50 KST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 기록할 날짜(YYYY-MM-DD). 비우면 오늘(KST)
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: experiment-metrics
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: ./.github/actions/setup-python-env
+        with:
+          requirements: ""   # 표준 라이브러리만 쓴다
+      - name: Record today's metrics
+        env:
+          INPUT_DATE: ${{ inputs.date }}
+        run: |
+          day="${INPUT_DATE:-$(TZ=Asia/Seoul date +%F)}"
+          python scripts/experiment_run.py --date "$day" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit metrics
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add metrics/experiment-daily.jsonl
+          if git diff --cached --quiet; then
+            echo "변경 없음"
+          else
+            git commit -m "chore(experiment): 일일 지표 기록 [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi

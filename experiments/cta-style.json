@@ -1,0 +1,19 @@
+{
+  "key": "cta-style",
+  "title": "버튼 문구 A/B: '데이터 보기' vs '지금 확인하기'",
+  "hypothesis": "긴급함을 담은 문구('지금 확인하기')가 원본('데이터 보기')보다 버튼 클릭률(CTR)을 올린다.",
+  "variants": { "control": "데이터 보기", "treatment": "지금 확인하기" },
+  "primary_metric": "cta_click / exposure (클릭률, CTR)",
+  "start": "2026-11-26",
+  "end": "2026-12-09",
+  "sessions_per_day": 2000,
+  "minimum_detectable_lift": 0.10,
+  "alpha": 0.05,
+  "power": 0.8,
+  "guardrail": { "max_segment_relative_drop": 0.25, "min_segment_exposures_per_variant": 300 },
+  "traffic": "가상 페르소나 10명(experiments/personas.json)의 비중대로 뽑은 합성 세션. 실제 방문자 데이터가 아니다.",
+  "decision_rule": {
+    "persevere": "상대 증가율 ≥ +10% 이고 p < 0.05 (양측 z 검정). 가드레일 위반 세그먼트가 있으면 '조건부 Persevere'(그 세그먼트는 원본 문구 유지).",
+    "pivot": "그 외 전부: 증가율이 +10% 미만이거나 통계적으로 유의하지 않음. 문구가 아니라 다른 가설(예: 마감일 강조, 알림 요약)로 전환한다."
+  }
+}
