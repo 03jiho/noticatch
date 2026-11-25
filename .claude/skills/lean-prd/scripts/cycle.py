@@ -29,7 +29,7 @@ def replace_or_append_section(text: str, heading: str, body: str, append: bool =
     if not m:
         return text.rstrip("\n") + f"\n\n## {heading}\n\n{body.strip()}\n"
     new_body = (m.group(2).rstrip("\n") + "\n\n" + body.strip() + "\n\n") if append else ("\n" + body.strip() + "\n\n")
-    return text[: m.start()] + m.group(1) + new_body + text[m.end():]
+    return re.sub(r"\n{3,}", "\n\n", text[: m.start()] + m.group(1) + new_body + text[m.end():])
 
 
 def next_cycle_number(log: str) -> int:

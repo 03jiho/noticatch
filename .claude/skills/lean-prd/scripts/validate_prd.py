@@ -59,7 +59,8 @@ def table_rows(body: str) -> list[list[str]]:
 
 
 def has_digit(s: str) -> bool:
-    return bool(re.search(r"\d", s))
+    """숫자가 있는가. 'MS2', 'H1' 같은 ID 속 숫자는 세지 않는다."""
+    return bool(re.search(r"\d", re.sub(r"\b(?:MS|H|M|E|P|R)\d+\b", "", s)))
 
 
 class Checker:
