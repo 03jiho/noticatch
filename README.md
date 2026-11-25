@@ -347,6 +347,8 @@ python3 -m pytest
 
 프런트엔드(GitHub Pages), 컨테이너(Docker), 클라우드(Google Cloud Run) 세 가지 배포를 자동화하고, 헬스체크와 모니터링을 붙였다.
 
+제출용 정리: [`docs/deploy/week10-report.md`](docs/deploy/week10-report.md)
+
 | 요구 | 구현 |
 |---|---|
 | 프런트엔드 자동 배포 + PR 프리뷰 | main 은 [`deploy-pages.yml`](.github/workflows/deploy-pages.yml), PR 은 [`pages-preview.yml`](.github/workflows/pages-preview.yml)(검사) → [`pages-preview-deploy.yml`](.github/workflows/pages-preview-deploy.yml)(배포, PR 에 주소 댓글). 프리뷰 주소: `https://03jiho.github.io/noticatch/pr-preview/pr-<번호>/` |
