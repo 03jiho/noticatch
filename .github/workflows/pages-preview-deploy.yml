@@ -34,9 +34,23 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}pr-preview/
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
     steps:
       - uses: actions/checkout@v4   # 기본 브랜치(main). PR 코드는 build_pages_site.py 가 git 에서 dashboard/ 만 꺼낸다.
+
+      # 이 배포를 일으킨 PR 번호. 열린 PR 은 workflow_run 이 알려 주지만, 머지·닫힌 PR 은 목록이 비어 있어서
+      # 브랜치 이름으로 가장 최근 PR 을 찾는다. (닫힌 PR 의 "프리뷰를 내렸습니다" 댓글을 달기 위해 필요하다)
+      - name: Find the pull request
+        env:
+          FROM_RUN: ${{ github.event.workflow_run.pull_requests[0].number }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+        run: |
+          number="$FROM_RUN"
+          if [ -z "$number" ]; then
+            number=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=all&head=$HEAD_OWNER:$BRANCH&per_page=1" --jq '.[0].number // empty')
+          fi
+          echo "PR_NUMBER=$number" >> "$GITHUB_ENV"
+          echo "PR: ${number:-없음}"
 
       - name: Build site (main + open PR previews)
         run: python3 scripts/build_pages_site.py --repo "$GITHUB_REPOSITORY" --out _site --previews --manifest manifest.json
