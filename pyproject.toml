@@ -13,5 +13,14 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["scripts"]
+pythonpath = ["scripts", "."]
 addopts = "-ra"
+
+[tool.coverage.run]
+source = ["noticatch", "scripts"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = ["if __name__ == .__main__.:", "raise SystemExit"]
