@@ -1,0 +1,23 @@
+validate_prd — docs/prd
+
+WARN  [log] 11 검토 메모가 비어 있음 — 제출 전 검토 내역을 남길 것
+ok    [files] 12개 파일 존재
+ok    [header/meta] 검사 완료
+ok    [heading] 검사 완료
+ok    [placeholder] 검사 완료
+ok    [H#] 가설 5개 정의·참조 검사 완료
+ok    [M#] 지표-가설 커버리지 검사 완료
+ok    [MVP] In/Out 검사 완료
+ok    [stack] 기술 스택 표 검사 완료
+ok    [milestone] 마일스톤 검사 완료
+ok    [pivot] Pivot 트리거·옵션 검사 완료
+ok    [log] BML 로그 검사 완료
+ok    [team] 역할 표 FTE·마일스톤 검사 완료
+ok    [events] 04/05 이벤트 이름 일치 (6개)
+ok    [threshold] 06 임계값 ↔ 05 목표치 일치 검사 완료 (7건)
+ok    [trigger] Pivot 트리거의 M#·P# 존재 검사 완료
+ok    [exit] 09 종료 조건 ↔ 05 목표치 일치 검사 완료 (4건)
+ok    [mvp-time] 구축 기간 추정 8일 (상한 10일 이내)
+
+결과: FAIL 0 · WARN 1 · ok 17
+=> 통과
