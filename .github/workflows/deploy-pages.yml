@@ -15,7 +15,6 @@ permissions:
   pages: write
   id-token: write
   pull-requests: read   # 열려 있는 PR 프리뷰를 목록으로 읽는다.
-  actions: read         # 업로드한 아티팩트가 보이는지 확인한다.
 
 concurrency:
   group: pages
@@ -45,21 +44,31 @@ jobs:
         with:
           path: _site
 
-      # 업로드한 아티팩트가 목록 API 에 보이기까지 몇 초 걸리는 경우가 있어, 바로 배포하면
-      # "No artifacts named github-pages" 로 실패한다. 보일 때까지 기다린 뒤 배포한다.
-      - name: Wait until the Pages artifact is listed
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for i in $(seq 1 24); do
-            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '[.artifacts[] | select(.name == "github-pages")] | length')
-            if [ "$n" -gt 0 ]; then echo "아티팩트가 목록에 나타났습니다 (${i}번째 확인)."; exit 0; fi
-            sleep 5
-          done
-          echo "::warning::아티팩트가 2분 안에 목록에 나타나지 않았습니다. 그대로 배포를 시도합니다."
-
-      - id: deployment
+      # Pages 배포는 가끔 "No artifacts named github-pages"(업로드가 아직 안 보임)나 "Deployment failed, try again later"
+      # 로 일시적으로 실패한다. 같은 아티팩트로 최대 3번까지 다시 시도하고, 3번 모두 실패하면 작업을 실패시킨다.
+      - id: deploy1
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before retry (1)
+        if: ${{ steps.deploy1.outcome == 'failure' }}
+        run: sleep 20
+      - id: deploy2
+        if: ${{ steps.deploy1.outcome == 'failure' }}
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before retry (2)
+        if: ${{ steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure' }}
+        run: sleep 40
+      - id: deploy3
+        if: ${{ steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure' }}
+        uses: actions/deploy-pages@v4
+      - id: deployment
+        name: Resolve the deployed page URL
+        env:
+          URL1: ${{ steps.deploy1.outputs.page_url }}
+          URL2: ${{ steps.deploy2.outputs.page_url }}
+          URL3: ${{ steps.deploy3.outputs.page_url }}
+        run: echo "page_url=${URL1:-${URL2:-$URL3}}" >> "$GITHUB_OUTPUT"
 
       # 올린 뒤 실제 주소가 열리는지 확인한다. (CDN 에 퍼지는 데 몇 초 걸릴 수 있어 재시도한다)
       - name: Verify the live site
