@@ -1,0 +1,53 @@
+name: E2E (Playwright)
+
+# 대시보드·Feature Flag 페이지를 실제 브라우저(Chromium)로 열어 사용자 시나리오를 검증한다.
+# 실패하면 그 순간의 화면(스크린샷)을 아티팩트 e2e-failure-screenshots 로 저장한다.
+on:
+  pull_request:
+    paths:
+      - dashboard/**
+      - e2e/**
+      - requirements-e2e.txt
+      - .github/workflows/e2e.yml
+  push:
+    branches: [main]
+    paths:
+      - dashboard/**
+      - e2e/**
+  workflow_dispatch:
+    inputs:
+      force_fail:
+        description: 일부러 실패하는 테스트도 실행해 스크린샷 아티팩트가 저장되는지 확인
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-env
+        with:
+          requirements: requirements-e2e.txt
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Run E2E
+        env:
+          E2E_FORCE_FAIL: ${{ inputs.force_fail && '1' || '' }}
+        run: python -m pytest e2e -v -p no:cacheprovider --rootdir=e2e -c /dev/null
+      - name: Upload failure screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure-screenshots
+          path: e2e/artifacts/*.png
+          if-no-files-found: warn
+          retention-days: 14
