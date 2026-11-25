@@ -1,9 +1,9 @@
 """기능 4: .ics 캘린더 피드 생성 (TDD). RFC 5545 의 필요한 부분만 지킨다."""
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from noticatch.ics import build_ics, escape_text, fold_line
 
-NOW = datetime(2026, 11, 26, 9, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 26, 9, 0, tzinfo=UTC)
 EVENT = {"title": "국가근로장학생 신청 마감", "url": "https://x.kr/n/1", "deadline": date(2026, 12, 13)}
 
 
@@ -32,17 +32,17 @@ def test_month_end_rolls_over():
 
 def test_uid_is_stable_for_the_same_url():
     a = [x for x in lines(build_ics([EVENT], now=NOW)) if x.startswith("UID:")]
-    b = [x for x in lines(build_ics([EVENT], now=datetime(2027, 1, 1, tzinfo=timezone.utc))) if x.startswith("UID:")]
+    b = [x for x in lines(build_ics([EVENT], now=datetime(2027, 1, 1, tzinfo=UTC))) if x.startswith("UID:")]
     assert a == b and a[0].endswith("@noticatch")
 
 
 def test_text_escaping():
-    assert escape_text("a,b;c\\d\ne") == "a\\,b\;c\\\\d\\ne"
+    assert escape_text("a,b;c\\d\ne") == "a\\,b\\;c\\\\d\\ne"
 
 
 def test_summary_is_escaped():
     ev = {**EVENT, "title": "인턴, 모집; 안내"}
-    assert "SUMMARY:인턴\\, 모집\; 안내" in lines(build_ics([ev], now=NOW))
+    assert "SUMMARY:인턴\\, 모집\\; 안내" in lines(build_ics([ev], now=NOW))
 
 
 def test_long_lines_are_folded_at_75_octets_without_splitting_characters():
