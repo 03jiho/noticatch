@@ -55,6 +55,8 @@
 
 실패하면 `e2e/conftest.py` 훅이 그 순간의 화면을 저장하고, 워크플로우가 `e2e-failure-screenshots` 아티팩트로 올립니다.
 
+**검증:** 일부러 실패하는 테스트를 켠 수동 실행([실행 기록](https://github.com/03jiho/noticatch/actions/runs/45649441213))이 실패했고, 아티팩트 `e2e-failure-screenshots` 에 스크린샷이 저장된 것을 확인했습니다. 정상 시나리오는 PR #49 의 `e2e` 검사에서 통과했습니다.
+
 ## 한계
 
 - Red 커밋들은 단독으로는 CI 를 통과하지 못합니다. (TDD 의 정의상 그렇고, PR 단위로 최종 상태를 검사합니다.)
