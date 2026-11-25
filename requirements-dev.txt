@@ -1,4 +1,5 @@
 # Dev and CI only. Keep this file ASCII: old pip on Windows (cp1252) fails to read other characters.
 pytest>=8,<10
+pytest-cov>=5,<8
 pyyaml>=6,<7
 ruff>=0.6,<1

@@ -21,6 +21,8 @@ source = ["noticatch", "scripts"]
 branch = true
 
 [tool.coverage.report]
+# CI 는 이 값 미만이면 실패한다 (과제 기준 80%)
+fail_under = 80
 show_missing = true
 skip_covered = false
 exclude_also = ["if __name__ == .__main__.:", "raise SystemExit"]
