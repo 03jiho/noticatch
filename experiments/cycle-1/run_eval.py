@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BML Cycle 1 의 측정(Measure) 단계: 마감일 추출기를 실제 공지 샘플로 평가한다.
 
-  python experiments/bml-cycle-1/run_eval.py [--out experiments/bml-cycle-1]
+  python experiments/cycle-1/run_eval.py [--out experiments/cycle-1]
 
 결과: results.json(기계용), results.md(사람용). 통과 기준은 docs/prd/05-experiments.md 의 E1 (정확도 90% 이상)로,
 실험 전에 이미 커밋되어 있다.
