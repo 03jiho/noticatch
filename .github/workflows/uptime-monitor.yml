@@ -1,0 +1,132 @@
+# 배포된 서비스 모니터링: 30분마다 헬스체크를 하고, 실패하면 장애 이슈를 열고 복구되면 닫는다.
+#
+# - 대상: GitHub Pages 대시보드(항상), Cloud Run 서비스(저장소 Variables 의 CLOUD_RUN_URL 이 있을 때)
+# - 확인: scripts/healthcheck.py — Cloud Run 은 /healthz 와 응답 시간, Pages 는 첫 화면과 샘플 데이터
+# - 실패: 3번(20초 간격) 다시 확인해도 실패하면 `incident` 라벨 이슈를 연다. 같은 대상의 열린 이슈가 있으면 새로 열지 않는다.
+# - 복구: 열린 이슈가 있는데 다시 정상이면 복구 댓글을 남기고 닫는다. 열린 시간이 곧 DORA 의 복구 시간(MTTR)이 된다.
+# - 훈련: 수동 실행에서 drill 을 켜고 url 에 일부러 잘못된 주소를 넣으면, `incident` 대신 `monitoring` 라벨로
+#         "[훈련]" 이슈를 열고 닫는다. 실제 DORA 지표에는 섞이지 않는다.
+name: Uptime Monitor
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"   # 매시 17분, 47분
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "확인할 주소를 직접 지정 (비우면 기본 대상)"
+        required: false
+        type: string
+      drill:
+        description: "훈련: incident 라벨 대신 monitoring 라벨로 이슈를 열고 닫는다"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime-monitor
+  cancel-in-progress: false
+
+env:
+  PAGES_URL: https://03jiho.github.io/noticatch/
+
+jobs:
+  check:
+    name: Check ${{ matrix.target.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write   # 장애 이슈를 열고 닫을 때만 필요하다.
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: pages
+          - name: cloud-run
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide the URL
+        id: target
+        env:
+          NAME: ${{ matrix.target.name }}
+          INPUT_URL: ${{ inputs.url }}
+          CLOUD_RUN_URL: ${{ vars.CLOUD_RUN_URL }}
+        run: |
+          if [ "$NAME" = "pages" ]; then url="${INPUT_URL:-$PAGES_URL}"; else url="${INPUT_URL:-$CLOUD_RUN_URL}"; fi
+          # 수동으로 주소를 지정하면 Cloud Run 대상은 건너뛰고 한 번만 확인한다.
+          if [ -n "$INPUT_URL" ] && [ "$NAME" != "pages" ]; then url=""; fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          if [ -z "$url" ]; then echo "$NAME: 확인할 주소가 없어 건너뜁니다."; fi
+
+      - name: Health check
+        id: health
+        if: ${{ steps.target.outputs.url != '' }}
+        env:
+          NAME: ${{ matrix.target.name }}
+          URL: ${{ steps.target.outputs.url }}
+        run: |
+          healthy=false
+          if [ "$NAME" = "cloud-run" ]; then
+            if python3 scripts/healthcheck.py "$URL" --max-latency-ms 3000 --retries 3 --interval 20; then healthy=true; fi
+          else
+            # Pages 에는 /healthz 가 없다. 첫 화면과 샘플 데이터가 열리는지 본다.
+            for i in 1 2 3; do
+              if curl -fsS "$URL" | grep -q "NotiCatch" && curl -fsS "${URL}sample-data.json" > /dev/null; then
+                echo "[$i/3] OK   $URL"; healthy=true; break
+              fi
+              echo "[$i/3] FAIL $URL"; sleep 20
+            done
+          fi
+          echo "healthy=$healthy" >> "$GITHUB_OUTPUT"
+
+      # 장애 이슈 열기·닫기. 대상마다 이슈 하나를 제목으로 구분한다.
+      - name: Open or close the incident issue
+        if: ${{ steps.target.outputs.url != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NAME: ${{ matrix.target.name }}
+          URL: ${{ steps.target.outputs.url }}
+          HEALTHY: ${{ steps.health.outputs.healthy }}
+          DRILL: ${{ inputs.drill }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$DRILL" = "true" ]; then
+            label="monitoring"; title="[훈련] 서비스 응답 없음: $NAME"
+            gh label create monitoring --color 5319E7 --description "모니터링 알림과 훈련" --repo "$REPO" 2>/dev/null || true
+          else
+            label="incident"; title="장애: 서비스 응답 없음 ($NAME)"
+          fi
+          number=$(gh api "repos/$REPO/issues?state=open&labels=$label&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\" and (.pull_request | not))][0].number // empty")
+
+          if [ "$HEALTHY" = "false" ]; then
+            if [ -n "$number" ]; then
+              echo "이미 열린 이슈 #$number 가 있어 새로 열지 않습니다."
+            else
+              body="모니터링이 \`$URL\` 의 헬스체크에 3번 연속 실패했습니다.
+
+          - 확인 시각: $(date -u '+%Y-%m-%d %H:%M UTC')
+          - 실행 기록: $RUN_URL
+
+          복구되면 다음 확인에서 이 이슈를 자동으로 닫습니다. 열린 시간이 복구 시간(MTTR)으로 계산됩니다."
+              gh api -X POST "repos/$REPO/issues" -f title="$title" -f body="$body" -f "labels[]=$label" --jq '"이슈를 열었습니다: " + .html_url'
+            fi
+          elif [ -n "$number" ]; then
+            gh api -X POST "repos/$REPO/issues/$number/comments" -f body="다시 정상입니다. 자동으로 닫습니다. ($RUN_URL)" > /dev/null
+            gh api -X PATCH "repos/$REPO/issues/$number" -f state=closed -f state_reason=completed > /dev/null
+            echo "이슈 #$number 를 닫았습니다."
+          else
+            echo "정상입니다."
+          fi
+
+      # 실패한 확인은 Actions 화면에서도 빨간색으로 보이게 한다. (이슈 처리 뒤에 실패시킨다)
+      - name: Fail the job if unhealthy
+        if: ${{ steps.health.outputs.healthy == 'false' && inputs.drill != true }}
+        run: |
+          echo "::error::헬스체크 실패: ${{ matrix.target.name }}"
+          exit 1

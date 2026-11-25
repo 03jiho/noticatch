@@ -1,0 +1,201 @@
+# Google Cloud Run 배포 자동화 (컨테이너, 서버리스).
+#
+#   Docker 워크플로우가 main 에서 이미지를 만들고 ghcr.io 에 올려 검증한 뒤 이 워크플로우가 이어서 실행된다.
+#
+#   1. ghcr.io 의 이미지를 다시 만들지 않고 "같은 digest 그대로" Artifact Registry 로 복사한다. (빌드 한 번, 승격)
+#   2. 이미지에 적힌 리비전이 배포하려는 커밋과 같은지 확인한다.
+#   3. 새 리비전을 트래픽 0%로 올리고 임시 주소(candidate)로 헬스체크를 한다.
+#   4. 통과하면 트래픽 100% 로 전환하고 실제 주소로 다시 확인한다. 실패하면 이전 리비전으로 되돌린다.
+#
+# 인증은 키 파일 없이 Workload Identity Federation(OIDC)으로 한다. 저장소에 비밀값을 넣지 않는다.
+# 처음 한 번 infra/gcp/setup.sh 를 실행하고 아래 변수를 저장소 Variables 에 넣어야 동작한다.
+#   GCP_PROJECT_ID, GCP_REGION, GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_DEPLOY_SERVICE_ACCOUNT
+# 변수가 없으면 배포 없이 "설정 필요" 안내만 남기고 성공으로 끝난다. (docs/deploy/cloud-run-setup.md)
+name: Deploy to Cloud Run
+
+on:
+  workflow_run:
+    workflows: ["Docker"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "배포할 커밋 SHA (비우면 main 의 최신 커밋). 그 커밋의 이미지가 ghcr.io 에 있어야 한다"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# 같은 서비스에 배포가 겹치면 트래픽 전환이 꼬인다. 줄을 세운다.
+concurrency:
+  group: cloud-run-production
+  cancel-in-progress: false
+
+env:
+  SERVICE: noticatch-dashboard
+  AR_REPO: noticatch
+  GHCR_IMAGE: ghcr.io/03jiho/noticatch-dashboard
+
+jobs:
+  config:
+    name: Check configuration
+    # Docker 워크플로우가 성공했을 때만 이어서 배포한다. 수동 실행은 항상 진행한다.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+      - id: check
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          DEPLOY_SA: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          INPUT_SHA: ${{ inputs.sha }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          MAIN_SHA: ${{ github.sha }}
+        run: |
+          sha="${INPUT_SHA:-${RUN_SHA:-$MAIN_SHA}}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if [ -n "$PROJECT" ] && [ -n "$PROVIDER" ] && [ -n "$DEPLOY_SA" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Cloud Run 배포: 설정 필요"
+              echo ""
+              echo "저장소 Variables 에 \`GCP_PROJECT_ID\`, \`GCP_WORKLOAD_IDENTITY_PROVIDER\`, \`GCP_DEPLOY_SERVICE_ACCOUNT\`, \`GCP_REGION\` 이 없어 배포를 건너뛰었습니다."
+              echo "설정 방법: \`docs/deploy/cloud-run-setup.md\` (한 번만 하면 됩니다)."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  deploy:
+    name: Deploy (candidate → health check → promote)
+    needs: config
+    if: ${{ needs.config.outputs.enabled == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write   # Google Cloud 에 OIDC 토큰으로 로그인한다.
+    environment:
+      name: production
+      url: ${{ steps.urls.outputs.service_url }}
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION || 'asia-northeast3' }}
+      SHA: ${{ needs.config.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: imjasonh/setup-crane@v0.4
+
+      # 1) 같은 digest 그대로 복사한다. 다시 빌드하면 검증한 이미지와 배포하는 이미지가 달라질 수 있다.
+      - name: Promote the verified image (same digest) to Artifact Registry
+        id: image
+        run: |
+          short="${SHA::7}"
+          src_digest=$(crane digest "$GHCR_IMAGE:sha-$short")
+          revision=$(crane config "$GHCR_IMAGE@$src_digest" | jq -r '.config.Labels["org.opencontainers.image.revision"] // ""')
+          if [ "$revision" != "$SHA" ]; then
+            echo "::error::이미지의 리비전($revision)이 배포하려는 커밋($SHA)과 다릅니다."; exit 1
+          fi
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          dest="$REGION-docker.pkg.dev/$PROJECT/$AR_REPO/dashboard"
+          crane copy "$GHCR_IMAGE@$src_digest" "$dest:sha-$short"
+          dest_digest=$(crane digest "$dest:sha-$short")
+          if [ "$dest_digest" != "$src_digest" ]; then
+            echo "::error::복사 후 digest 가 달라졌습니다: $src_digest != $dest_digest"; exit 1
+          fi
+          echo "ref=$dest@$dest_digest" >> "$GITHUB_OUTPUT"
+          echo "digest=$dest_digest" >> "$GITHUB_OUTPUT"
+
+      # 2) 새 리비전을 트래픽 없이 올린다. 서비스가 처음이면 트래픽 0% 로는 만들 수 없어 그대로 올린다.
+      - name: Deploy a new revision with no traffic
+        id: deploy
+        env:
+          IMAGE: ${{ steps.image.outputs.ref }}
+          RUNTIME_SA: noticatch-runtime@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+        run: |
+          if gcloud run services describe "$SERVICE" --region "$REGION" > /dev/null 2>&1; then
+            first=false
+            prev=$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json \
+              | jq -r '[.status.traffic[] | select(.percent == 100) | .revisionName][0] // ""')
+            traffic_flags=(--no-traffic --tag candidate)
+          else
+            first=true; prev=""
+            traffic_flags=(--tag candidate)
+          fi
+          echo "first=$first" >> "$GITHUB_OUTPUT"
+          echo "prev=$prev" >> "$GITHUB_OUTPUT"
+
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE" --region "$REGION" --platform managed \
+            --port 8080 --allow-unauthenticated \
+            --service-account "$RUNTIME_SA" \
+            --cpu 1 --memory 128Mi --min-instances 0 --max-instances 3 --concurrency 80 --timeout 30 \
+            --startup-probe "httpGet.path=/healthz,httpGet.port=8080,periodSeconds=3,failureThreshold=10" \
+            --liveness-probe "httpGet.path=/healthz,httpGet.port=8080,periodSeconds=30" \
+            --labels "managed-by=github-actions,commit=${SHA::7}" \
+            "${traffic_flags[@]}" --quiet
+
+          new=$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json \
+            | jq -r '[.status.traffic[] | select(.tag == "candidate") | .revisionName][0]')
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve URLs
+        id: urls
+        run: |
+          json=$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json)
+          echo "service_url=$(echo "$json" | jq -r '.status.url')" >> "$GITHUB_OUTPUT"
+          echo "candidate_url=$(echo "$json" | jq -r '[.status.traffic[] | select(.tag == "candidate") | .url][0]')" >> "$GITHUB_OUTPUT"
+
+      # 3) 트래픽을 옮기기 전에 새 리비전이 정상인지 임시 주소로 확인한다.
+      - name: Health check the candidate revision
+        run: |
+          python3 scripts/healthcheck.py "${{ steps.urls.outputs.candidate_url }}" \
+            --expect-sha "$SHA" --max-latency-ms 3000 --retries 10 --interval 6
+
+      # 4) 통과했을 때만 트래픽을 옮긴다.
+      - name: Promote to 100% traffic
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" \
+            --to-revisions "${{ steps.deploy.outputs.new }}=100" --quiet
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --remove-tags candidate --quiet
+
+      - name: Health check the live service
+        id: live
+        run: |
+          python3 scripts/healthcheck.py "${{ steps.urls.outputs.service_url }}" \
+            --expect-sha "$SHA" --max-latency-ms 3000 --retries 10 --interval 6
+
+      # 전환 뒤 확인이 실패하면 이전 리비전으로 되돌린다.
+      - name: Roll back to the previous revision
+        if: ${{ failure() && steps.live.conclusion == 'failure' && steps.deploy.outputs.prev != '' }}
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" \
+            --to-revisions "${{ steps.deploy.outputs.prev }}=100" --quiet
+          echo "::warning::이전 리비전(${{ steps.deploy.outputs.prev }})으로 되돌렸습니다."
+
+      - name: Summary
+        if: ${{ always() }}
+        env:
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "### Cloud Run 배포 ($OUTCOME)"
+            echo ""
+            echo "- 서비스: \`$SERVICE\` ($REGION)"
+            echo "- 커밋: \`${SHA::7}\`"
+            echo "- 이미지 digest: \`${{ steps.image.outputs.digest }}\`"
+            echo "- 새 리비전: \`${{ steps.deploy.outputs.new }}\`, 이전 리비전: \`${{ steps.deploy.outputs.prev }}\`"
+            echo "- 주소: ${{ steps.urls.outputs.service_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

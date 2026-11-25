@@ -342,3 +342,14 @@ python3 -m pytest
 | Docker 이미지 자동 빌드/푸시, 로컬 실행 검증 | [`Dockerfile`](Dockerfile) + [`docker.yml`](.github/workflows/docker.yml) 이 빌드 → 실행 검증 → `ghcr.io` 푸시 → 푸시한 이미지를 다시 받아 실행 검증을 한다. 같은 검사를 [`scripts/docker_smoke.sh`](scripts/docker_smoke.sh) 로 내 컴퓨터에서도 할 수 있다 | `docker run --rm -p 8080:8080 ghcr.io/03jiho/noticatch-dashboard:latest` |
 | Dependabot 정책 | [`dependabot.yml`](.github/dependabot.yml): 주 1회(월 09:00 KST), 마이너·패치는 그룹으로, 메이저는 따로. 자동 머지는 [`dependabot_automerge.py`](scripts/dependabot_automerge.py) 가 조건(패치 / 개발용·Actions 마이너, 메이저 제외, 검사 전부 통과)을 보고 결정한다 | 테스트 15개 |
 | 보안 스캔을 이슈·리포트로 자동화 | [`security-audit.yml`](.github/workflows/security-audit.yml): npm audit (+ `SNYK_TOKEN` 이 있으면 Snyk) → 보고서 아티팩트·Job Summary → 취약점이 있으면 `security` 이슈를 열고 없어지면 닫는다 | 테스트 10개 |
+
+## 14. 10주차: 멀티 플랫폼 배포 자동화
+
+프런트엔드(GitHub Pages), 컨테이너(Docker), 클라우드(Google Cloud Run) 세 가지 배포를 자동화하고, 헬스체크와 모니터링을 붙였다.
+
+| 요구 | 구현 |
+|---|---|
+| 프런트엔드 자동 배포 + PR 프리뷰 | main 은 [`deploy-pages.yml`](.github/workflows/deploy-pages.yml), PR 은 [`pages-preview.yml`](.github/workflows/pages-preview.yml)(검사) → [`pages-preview-deploy.yml`](.github/workflows/pages-preview-deploy.yml)(배포, PR 에 주소 댓글). 프리뷰 주소: `https://03jiho.github.io/noticatch/pr-preview/pr-<번호>/` |
+| Docker 기반 배포 파이프라인 전략 | [`docs/deploy/docker-pipeline-strategy.md`](docs/deploy/docker-pipeline-strategy.md): 한 번 빌드·같은 digest 승격, 태그, 환경, 롤백, 보안 |
+| 클라우드 1개 플랫폼 배포 자동화 | Google Cloud Run: [`deploy-cloudrun.yml`](.github/workflows/deploy-cloudrun.yml) (digest 승격 → 트래픽 0% 후보 → 헬스체크 → 전환 → 실패 시 롤백). 설정은 [`docs/deploy/cloud-run-setup.md`](docs/deploy/cloud-run-setup.md) |
+| 헬스체크 / 모니터링 | 이미지의 `/healthz`, `/version.json` + [`healthcheck.py`](scripts/healthcheck.py), 30분마다 도는 [`uptime-monitor.yml`](.github/workflows/uptime-monitor.yml)(실패 시 `incident` 이슈, 복구 시 닫음), Cloud Monitoring 설정([`infra/gcp`](infra/gcp)) |

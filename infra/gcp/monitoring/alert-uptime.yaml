@@ -1,0 +1,20 @@
+displayName: "noticatch-dashboard: 업타임 체크 실패"
+combiner: OR
+conditions:
+  - displayName: "/healthz 업타임 체크가 실패함"
+    conditionThreshold:
+      filter: 'metric.type="monitoring.googleapis.com/uptime_check/check_passed" AND metric.label.check_id="__CHECK_ID__" AND resource.type="uptime_url"'
+      aggregations:
+        - alignmentPeriod: 300s
+          perSeriesAligner: ALIGN_NEXT_OLDER
+          crossSeriesReducer: REDUCE_COUNT_FALSE
+          groupByFields: ["resource.label.*"]
+      comparison: COMPARISON_GT
+      thresholdValue: 1
+      duration: 60s
+      trigger:
+        count: 1
+documentation:
+  content: "서비스의 /healthz 가 여러 지역에서 응답하지 않습니다. Cloud Run 로그와 최근 배포(Actions 'Deploy to Cloud Run')를 확인하세요. 최근 배포가 원인이면 이전 리비전으로 트래픽을 되돌립니다."
+  mimeType: text/markdown
+notificationChannels: ["__CHANNEL__"]

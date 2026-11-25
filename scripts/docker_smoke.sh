@@ -46,6 +46,20 @@ python3 -c "import json; d = json.load(open('/tmp/smoke-data.json')); assert 'me
   || { echo "sample-data.json 형식이 올바르지 않습니다." >&2; exit 1; }
 echo "OK  GET /sample-data.json → 200, JSON(metrics 포함)"
 
+body=$(curl -s -w '\n%{http_code}' "$base/healthz")
+[ "$(echo "$body" | tail -n1)" = "200" ] || { echo "/healthz 응답: $body" >&2; exit 1; }
+echo "OK  GET /healthz          → 200"
+
+code=$(curl -s -o /tmp/smoke-version.json -w '%{http_code}' "$base/version.json")
+[ "$code" = "200" ] || { echo "/version.json 응답 코드: $code" >&2; exit 1; }
+python3 -c "import json; d = json.load(open('/tmp/smoke-version.json')); assert d['sha']" \
+  || { echo "version.json 형식이 올바르지 않습니다." >&2; exit 1; }
+echo "OK  GET /version.json     → 200, sha=$(python3 -c "import json; print(json.load(open('/tmp/smoke-version.json'))['sha'][:7])")"
+
+headers=$(curl -s -D - -o /dev/null "$base/")
+echo "$headers" | grep -qi '^x-content-type-options: nosniff' || { echo "보안 헤더(X-Content-Type-Options)가 없습니다." >&2; exit 1; }
+echo "OK  보안 헤더 X-Content-Type-Options: nosniff"
+
 code=$(curl -s -o /dev/null -w '%{http_code}' "$base/no-such-path")
 [ "$code" = "404" ] || { echo "없는 경로 응답 코드: $code (404 기대)" >&2; exit 1; }
 echo "OK  GET /no-such-path          → 404"
