@@ -1,6 +1,6 @@
 # 스프린트 분석 보고서
 
-- 생성: 2026-11-26 01:24 KST (GitHub Actions 자동 생성)
+- 생성: 2026-11-26 08:25 KST (GitHub Actions 자동 생성)
 - 현재 스프린트: Sprint 6 · 실험 운영 (13주차)
 - Velocity: 1.5 pts (완료된 스프린트 평균)
 - Cycle Time 중앙값: 0.1시간 (완료 이슈 3개)
