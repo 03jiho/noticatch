@@ -1,0 +1,7 @@
+{
+  "service": "noticatch-dashboard",
+  "stages": [1, 10, 50, 100],
+  "checksPerStage": 3,
+  "thresholds": { "maxErrorRate": 0.02, "maxP95Ms": 800 },
+  "rollback": "any failed check at any stage sends 100% of traffic back to the stable revision"
+}

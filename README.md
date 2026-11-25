@@ -355,3 +355,10 @@ python3 -m pytest
 | Docker 기반 배포 파이프라인 전략 | [`docs/deploy/docker-pipeline-strategy.md`](docs/deploy/docker-pipeline-strategy.md): 한 번 빌드·같은 digest 승격, 태그, 환경, 롤백, 보안 |
 | 클라우드 1개 플랫폼 배포 자동화 | Google Cloud Run: [`deploy-cloudrun.yml`](.github/workflows/deploy-cloudrun.yml) (digest 승격 → 트래픽 0% 후보 → 헬스체크 → 전환 → 실패 시 롤백). 설정은 [`docs/deploy/cloud-run-setup.md`](docs/deploy/cloud-run-setup.md) |
 | 헬스체크 / 모니터링 | 이미지의 `/healthz`, `/version.json` + [`healthcheck.py`](scripts/healthcheck.py), 30분마다 도는 [`uptime-monitor.yml`](.github/workflows/uptime-monitor.yml)(실패 시 `incident` 이슈, 복구 시 닫음), Cloud Monitoring 설정([`infra/gcp`](infra/gcp)) |
+
+## 15. 11주차: Feature Flags 및 점진적 배포
+
+Feature Flag 4개(환경·대상 사용자·점진 공개·킬 스위치), A/B 테스트(2 variant, 일관 할당, 이벤트 추적), 카나리 롤아웃(1-10-50-100%, 헬스체크 기반 자동 롤백)을 구현했다.
+
+- 라이브 데모: https://03jiho.github.io/noticatch/flags.html
+- 정리: [`docs/rollout/week11-report.md`](docs/rollout/week11-report.md) · 실험 로그: [`docs/experiments/ab-log.md`](docs/experiments/ab-log.md) · 롤아웃 로그: [`docs/rollout/canary-log.md`](docs/rollout/canary-log.md)
