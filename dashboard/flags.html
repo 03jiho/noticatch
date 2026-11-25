@@ -98,7 +98,7 @@
   var config, client, clicks = 0, exposures = 0;
   function sink(e) {
     var log = $("log");
-    if (log.textContent.indexOf("아직") === 0) log.textContent = "";
+    if (log.textContent.indexOf("(아직") === 0) log.textContent = "";
     log.textContent += JSON.stringify(e) + "\n";
     log.scrollTop = log.scrollHeight;
     var saved = []; try { saved = JSON.parse(store("noti.events") || "[]"); } catch (x) {}
