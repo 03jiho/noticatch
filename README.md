@@ -375,3 +375,9 @@ TDD(Red-Green-Refactor)로 핵심 기능 6개(마감일 추출, 중복 제거, �
 LLM 페르소나 10명의 시나리오를 테스트 코드로 평가하고(결함 1건 발견·수정), `cta-style` A/B 실험을 2주 동안 매일 자동 수집·주간 리포트·최종 결정 문서로 운영한다. 사용자와 데이터는 모두 가상(합성)이다.
 
 - 정리: [`docs/lean/week13-report.md`](docs/lean/week13-report.md) · 결정: [`docs/lean/decision.md`](docs/lean/decision.md)
+
+## 18. 기타 과제: Lean PRD Skill
+
+BML 기반 Agent Skill `lean-prd`(`.claude/skills/lean-prd/`)와, 이 프로젝트의 PRD 12개(`docs/prd/`), 가장 위험한 가설(마감일 추출 정확도)의 BML 사이클 1회(Pivot)를 담았다.
+
+- 정리: [`docs/lean/prd-assignment.md`](docs/lean/prd-assignment.md)
