@@ -163,13 +163,13 @@ GitHub Actions로 DORA 4대 지표를 자동으로 모으고, 대시보드와 �
 ### 현재 지표 (자동 갱신)
 
 <!-- DORA:START -->
-_마지막 자동 갱신: 2026-11-26 02:06 KST · [주간 보고서](reports/weekly/2026-W48.md) · [JSON](metrics/dora-latest.json)_
+_마지막 자동 갱신: 2026-11-26 02:14 KST · [주간 보고서](reports/weekly/2026-W48.md) · [JSON](metrics/dora-latest.json)_
 
 | 지표 | 최근 30일 | 등급(참고) |
 |---|---|---|
-| Deployment Frequency | 27회 (주 6.3회) | High |
-| Lead Time for Changes | 3분 (중앙값, n=59) | Elite |
-| Change Failure Rate | 10% (3/30) | Elite |
+| Deployment Frequency | 28회 (주 6.53회) | High |
+| Lead Time for Changes | 3분 (중앙값, n=60) | Elite |
+| Change Failure Rate | 10% (3/31) | Elite |
 | MTTR | 21분 (중앙값, n=2) | Elite |
 <!-- DORA:END -->
 
