@@ -15,6 +15,7 @@ permissions:
   pages: write
   id-token: write
   pull-requests: read   # 열려 있는 PR 프리뷰를 목록으로 읽는다.
+  actions: read         # 업로드한 아티팩트가 보이는지 확인한다.
 
 concurrency:
   group: pages
@@ -43,6 +44,19 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+      # 업로드한 아티팩트가 목록 API 에 보이기까지 몇 초 걸리는 경우가 있어, 바로 배포하면
+      # "No artifacts named github-pages" 로 실패한다. 보일 때까지 기다린 뒤 배포한다.
+      - name: Wait until the Pages artifact is listed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in $(seq 1 24); do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '[.artifacts[] | select(.name == "github-pages")] | length')
+            if [ "$n" -gt 0 ]; then echo "아티팩트가 목록에 나타났습니다 (${i}번째 확인)."; exit 0; fi
+            sleep 5
+          done
+          echo "::warning::아티팩트가 2분 안에 목록에 나타나지 않았습니다. 그대로 배포를 시도합니다."
 
       - id: deployment
         uses: actions/deploy-pages@v4
