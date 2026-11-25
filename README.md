@@ -362,3 +362,9 @@ Feature Flag 4개(환경·대상 사용자·점진 공개·킬 스위치), A/B �
 
 - 라이브 데모: https://03jiho.github.io/noticatch/flags.html
 - 정리: [`docs/rollout/week11-report.md`](docs/rollout/week11-report.md) · 실험 로그: [`docs/experiments/ab-log.md`](docs/experiments/ab-log.md) · 롤아웃 로그: [`docs/rollout/canary-log.md`](docs/rollout/canary-log.md)
+
+## 16. 12주차: Shift-Left 테스트 자동화
+
+TDD(Red-Green-Refactor)로 핵심 기능 6개(마감일 추출, 중복 제거, 키워드 매칭, `.ics` 피드, D-day, 리마인드)를 만들고, 커버리지 80% 게이트를 CI 에 걸었다(현재 86.8%). Playwright E2E 는 실패 시 스크린샷을 아티팩트로 저장한다.
+
+- 정리: [`docs/testing/week12-report.md`](docs/testing/week12-report.md)
