@@ -139,3 +139,18 @@ def test_slow_rolls_back_at_10_and_never_reaches_50():
     r = run("slow")
     assert r["failed_stage"] == 10 and "p95" in r["reason"]
     assert 50 not in {s["stage"] for s in r["steps"]}
+
+
+def test_ab_main_writes_log_and_events(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "argv", ["ab_simulation.py", "--users", "400", "--out", str(tmp_path)])
+    assert ab.main() == 0
+    log = (tmp_path / "ab-log.md").read_text(encoding="utf-8")
+    assert "시뮬레이션 결과입니다" in log and "`control`" in log and "`treatment`" in log
+    assert len((tmp_path / "events-sample.jsonl").read_text(encoding="utf-8").splitlines()) <= 200
+
+
+def test_ab_log_states_whether_difference_is_significant():
+    rates = {"control": 0.1, "treatment": 0.1}
+    same = ab.simulate(EXP, 2000, rates, 3)
+    assert "유의하지 않음" in ab.render_log(EXP, {**same, "p": 0.5}, 2000, rates, 3)
+    assert "유의함" in ab.render_log(EXP, {**same, "p": 0.001}, 2000, rates, 3)
