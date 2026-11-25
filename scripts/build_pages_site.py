@@ -98,6 +98,30 @@ def export_dashboard(sha: str, dest: Path) -> None:
         shutil.copytree(Path(tmp) / "dashboard", dest)
 
 
+def build_preview(p: dict, out: Path) -> bool:
+    """PR 하나의 프리뷰 폴더를 만든다. 성공하면 True, 건너뛰면 사유를 stderr 에 남기고 False."""
+    try:
+        run("git", "fetch", "--depth=1", "origin", f"refs/pull/{p['number']}/head")
+        dest = out / PREVIEW_DIR / f"pr-{p['number']}"
+        export_dashboard(run("git", "rev-parse", "FETCH_HEAD").strip(), dest)
+    except subprocess.CalledProcessError as e:
+        print(f"PR #{p['number']} 프리뷰를 만들지 못해 건너뜁니다: {e}", file=sys.stderr)
+        return False
+    index = dest / "index.html"
+    if not index.is_file():
+        print(f"PR #{p['number']}: dashboard/index.html 이 없어 건너뜁니다.", file=sys.stderr)
+        shutil.rmtree(dest)
+        return False
+    page = index.read_text(encoding="utf-8")
+    bad = check_relative_links(page)
+    if bad:
+        print(f"PR #{p['number']}: 하위 경로에서 깨질 절대 경로 링크 {bad[:3]} — 건너뜁니다.", file=sys.stderr)
+        shutil.rmtree(dest)
+        return False
+    index.write_text(inject_banner(page, p["number"], p["sha"], p["title"]), encoding="utf-8")
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--repo", required=True)
@@ -117,26 +141,8 @@ def main() -> int:
         files = {pr["number"]: [f["filename"] for f in gh_json(f"repos/{args.repo}/pulls/{pr['number']}/files?per_page=100")]
                  for pr in prs if (pr.get("head", {}).get("repo") or {}).get("full_name") == args.repo and not pr.get("draft")}
         for p in select_previews(prs, files, args.repo):
-            try:
-                run("git", "fetch", "--depth=1", "origin", f"refs/pull/{p['number']}/head")
-                dest = out / PREVIEW_DIR / f"pr-{p['number']}"
-                export_dashboard(run("git", "rev-parse", "FETCH_HEAD").strip(), dest)
-            except subprocess.CalledProcessError as e:
-                print(f"PR #{p['number']} 프리뷰를 만들지 못해 건너뜁니다: {e}", file=sys.stderr)
-                continue
-            index = dest / "index.html"
-            if not index.is_file():
-                print(f"PR #{p['number']}: dashboard/index.html 이 없어 건너뜁니다.", file=sys.stderr)
-                shutil.rmtree(dest)
-                continue
-            page = index.read_text(encoding="utf-8")
-            bad = check_relative_links(page)
-            if bad:
-                print(f"PR #{p['number']}: 하위 경로에서 깨질 절대 경로 링크 {bad[:3]} — 건너뜁니다.", file=sys.stderr)
-                shutil.rmtree(dest)
-                continue
-            index.write_text(inject_banner(page, p["number"], p["sha"], p["title"]), encoding="utf-8")
-            previews.append(p)
+            if build_preview(p, out):
+                previews.append(p)
         (out / PREVIEW_DIR).mkdir(exist_ok=True)
         (out / PREVIEW_DIR / "index.html").write_text(render_index(previews), encoding="utf-8")
 

@@ -33,13 +33,25 @@ jobs:
       - uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
-      - name: pytest
-        run: python -m pytest --junitxml=test-results/junit.xml
+      # 커버리지가 pyproject.toml 의 fail_under(80%) 아래면 이 단계가 실패한다.
+      - name: pytest (coverage gate 80%)
+        run: python -m pytest --cov --cov-report=term --cov-report=xml:test-results/coverage.xml --junitxml=test-results/junit.xml
+      - name: Coverage summary
+        if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' }}
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+          root = ET.parse("test-results/coverage.xml").getroot()
+          print(f"### 커버리지 {float(root.get('line-rate')) * 100:.1f}% (줄) / {float(root.get('branch-rate')) * 100:.1f}% (분기), 기준 80%")
+          PY
       - name: Upload test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-prefix }}-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: test-results/junit.xml
+          path: |
+            test-results/junit.xml
+            test-results/coverage.xml
           if-no-files-found: error
           retention-days: 7
