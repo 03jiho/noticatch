@@ -376,8 +376,18 @@ LLM 페르소나 10명의 시나리오를 테스트 코드로 평가하고(결�
 
 - 정리: [`docs/lean/week13-report.md`](docs/lean/week13-report.md) · 결정: [`docs/lean/decision.md`](docs/lean/decision.md)
 
-## 18. 기타 과제: Lean PRD Skill
+## 18. 기타 과제: BML 기반 Lean PRD Skill (과제 5)
 
-BML 기반 Agent Skill `lean-prd`(`.claude/skills/lean-prd/`)와, 이 프로젝트의 PRD 12개(`docs/prd/`), 가장 위험한 가설(마감일 추출 정확도)의 BML 사이클 1회(Pivot)를 담았다.
+학교 공지 알림(NotiCatch) 아이디어를 BML 순서로 검증 가능한 PRD 12개로 만드는 Agent Skill과, 그 결과물이다.
 
-- 정리: [`docs/lean/prd-assignment.md`](docs/lean/prd-assignment.md)
+| 제출물 | 위치 |
+|---|---|
+| 스킬 | [`.claude/skills/lean-prd/`](.claude/skills/lean-prd) (`SKILL.md`, `references/`, `assets/prd-templates/`, `scripts/validate_prd.py`) |
+| PRD 12종 + 검증 결과 | [`docs/prd/`](docs/prd) (`VALIDATION.txt` 포함) |
+| BML 사이클 1회 증빙 | [`experiments/cycle-1/`](experiments/cycle-1), [`docs/prd/11-bml-log.md`](docs/prd/11-bml-log.md) |
+| 회고 | [`RETROSPECTIVE.md`](RETROSPECTIVE.md) |
+| 스킬 호출 기록 | [`docs/skill-session.md`](docs/skill-session.md) |
+
+검증: `python3 .claude/skills/lean-prd/scripts/validate_prd.py docs/prd`
+
+한계: 사용자 반응 데이터가 없고(공개 공지로 추출 정확도만 측정), 호출은 클라우드 세션에서 했으며, 검토 메모는 본인이 채워야 한다. 자세한 내용은 위 회고와 호출 기록에 있다.

@@ -173,7 +173,7 @@ def rule_header_and_meta(prd: Path, r: Report) -> None:
         if not text:
             continue
         num = name[:2]
-        first = next((l for l in text.splitlines() if l.strip()), "")
+        first = next((ln for ln in text.splitlines() if ln.strip()), "")
         if not re.match(rf"# {num}\. ", first):
             r.fail(f"[header] {name}: 첫 줄이 '# {num}. <제목>' 형식이 아님 → '{first[:40]}'")
         head = "\n".join(text.splitlines()[:8])
@@ -187,7 +187,7 @@ def rule_required_headings(prd: Path, r: Report) -> None:
         text = read(prd, name)
         if not text:
             continue
-        lines = {l.strip() for l in text.splitlines()}
+        lines = {ln.strip() for ln in text.splitlines()}
         for h in heads:
             if h not in lines:
                 r.fail(f"[heading] {name}: 필수 헤딩 없음 → '{h}'")
@@ -308,7 +308,7 @@ def rule_milestones(prd: Path, r: Report) -> None:
     if len(ids) < 4:
         r.fail(f"[milestone] 09 §2: 마일스톤 블록 {len(ids)}개 — '### MS0 — …' ~ '### MS3 — …' 4개 필요 (M0가 아니라 MS0)")
     pivots = set(P_ID_RE.findall(section(t10, "## 3. 사전 정의된 Pivot 옵션")))
-    for mid, body in zip(ids, bodies):
+    for mid, body in zip(ids, bodies, strict=False):
         if not re.search(r"검증 가설\s*:\s*.*H\d", body):
             r.fail(f"[milestone] {mid}: '검증 가설: H#' 줄 없음")
         m = re.search(r"종료 조건\s*:\s*(.*)", body)
