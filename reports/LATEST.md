@@ -1,16 +1,16 @@
 # DORA 주간 보고서 2026-W48
 
 - 저장소: `03jiho/noticatch`
-- 생성 시각: 2026-11-25 23:36 (KST), GitHub Actions 자동 생성
+- 생성 시각: 2026-11-25 23:53 (KST), GitHub Actions 자동 생성
 - 집계 기간: 최근 30일 / 배포 기준 워크플로우: `deploy-pages.yml`
 
 ## 요약
 
 | 지표 | 최근 30일 | 등급(참고) |
 |---|---|---|
-| Deployment Frequency | 16회 (주 3.73회) | High |
-| Lead Time for Changes | 1분 (중앙값, n=16) | Elite |
-| Change Failure Rate | 6% (1/17) | Elite |
+| Deployment Frequency | 18회 (주 4.2회) | High |
+| Lead Time for Changes | 1분 (중앙값, n=18) | Elite |
+| Change Failure Rate | 0% (0/18) | Elite |
 | MTTR | 데이터 없음 (중앙값, n=0) | N/A |
 
 ## 주간 추이
@@ -24,13 +24,14 @@
 | 2026-W45 (2026-11-02~) | 3 | 0 | 1분 | 0% | 데이터 없음 |
 | 2026-W46 (2026-11-09~) | 13 | 0 | 1분 | 0% | 데이터 없음 |
 | 2026-W47 (2026-11-16~) | 0 | 0 | 데이터 없음 | 데이터 없음 | 데이터 없음 |
-| 2026-W48 (2026-11-23~) | 0 | 1 | 데이터 없음 | 100% | 데이터 없음 |
+| 2026-W48 (2026-11-23~) | 2 | 0 | 2분 | 0% | 데이터 없음 |
 
 ## 최근 배포
 
 | 시각(UTC) | 커밋 | 결과 | 실행 |
 |---|---|---|---|
-| 2026-11-25 14:35 | `f5d392f` | failure | [run](https://github.com/03jiho/noticatch/actions/runs/45635779540) |
+| 2026-11-25 14:52 | `e2a8f50` | success | [run](https://github.com/03jiho/noticatch/actions/runs/45638791625) |
+| 2026-11-25 14:35 | `f5d392f` | success | [run](https://github.com/03jiho/noticatch/actions/runs/45635779540) |
 | 2026-11-09 17:23 | `dc3f9a8` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42664078958) |
 | 2026-11-09 17:18 | `8509e28` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42663377133) |
 | 2026-11-09 17:16 | `1faa5d4` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42662933042) |
@@ -39,6 +40,5 @@
 | 2026-11-09 13:55 | `950cb94` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42629765842) |
 | 2026-11-09 13:55 | `2f0195b` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42629708769) |
 | 2026-11-09 03:28 | `0801ac6` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42556629631) |
-| 2026-11-09 03:23 | `01d9413` | success | [run](https://github.com/03jiho/noticatch/actions/runs/42556170649) |
 
 > 원본 데이터: [`metrics/dora-latest.json`](../metrics/dora-latest.json)

@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-11-25T14:36:12+00:00",
+  "generated_at": "2026-11-25T14:53:03+00:00",
   "repo": "03jiho/noticatch",
   "window_days": 30,
   "deploy_workflow": "deploy-pages.yml",
   "metrics": {
     "deployment_frequency": {
-      "successful_deploys": 16,
-      "per_week": 3.73
+      "successful_deploys": 18,
+      "per_week": 4.2
     },
     "lead_time_for_changes": {
       "median_h": 0.01,
-      "samples": 16
+      "samples": 18
     },
     "change_failure_rate": {
-      "rate": 0.059,
-      "failed": 1,
-      "total": 17
+      "rate": 0.0,
+      "failed": 0,
+      "total": 18
     },
     "mttr": {
       "median_h": null,
@@ -95,10 +95,10 @@
     {
       "week": "2026-W48",
       "start": "2026-11-23",
-      "deploys": 0,
-      "failed": 1,
-      "lead_time_median_h": null,
-      "change_failure_rate": 1.0,
+      "deploys": 2,
+      "failed": 0,
+      "lead_time_median_h": 0.03,
+      "change_failure_rate": 0.0,
       "mttr_median_h": null
     }
   ],
@@ -359,11 +359,24 @@
     {
       "run_id": 45635779540,
       "sha": "f5d392f",
-      "conclusion": "failure",
+      "conclusion": "success",
       "created_at": "2026-11-25T14:35:45Z",
-      "finished_at": "2026-11-25T14:35:59Z",
-      "lead_times_h": [],
+      "finished_at": "2026-11-25T14:38:53Z",
+      "lead_times_h": [
+        0.05
+      ],
       "url": "https://github.com/03jiho/noticatch/actions/runs/45635779540"
+    },
+    {
+      "run_id": 45638791625,
+      "sha": "e2a8f50",
+      "conclusion": "success",
+      "created_at": "2026-11-25T14:52:18Z",
+      "finished_at": "2026-11-25T14:52:53Z",
+      "lead_times_h": [
+        0.01
+      ],
+      "url": "https://github.com/03jiho/noticatch/actions/runs/45638791625"
     }
   ],
   "recoveries": []
