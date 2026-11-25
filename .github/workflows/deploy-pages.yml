@@ -14,6 +14,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: read   # 열려 있는 PR 프리뷰를 목록으로 읽는다.
 
 concurrency:
   group: pages
@@ -31,11 +32,30 @@ jobs:
       - name: Check dashboard files
         run: test -f dashboard/index.html
 
+      # main 의 대시보드에 열려 있는 PR 프리뷰를 더해서 올린다. (프리뷰를 지우지 않으려고 같은 스크립트를 쓴다)
+      - name: Build site (main + open PR previews)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/build_pages_site.py --repo "$GITHUB_REPOSITORY" --out _site --previews
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dashboard
+          path: _site
 
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      # 올린 뒤 실제 주소가 열리는지 확인한다. (CDN 에 퍼지는 데 몇 초 걸릴 수 있어 재시도한다)
+      - name: Verify the live site
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for i in $(seq 1 18); do
+            if curl -fsS "$PAGE_URL" | grep -q "NotiCatch" && curl -fsS "${PAGE_URL}sample-data.json" > /dev/null; then
+              echo "OK  $PAGE_URL"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$PAGE_URL 이 열리지 않습니다."; exit 1
