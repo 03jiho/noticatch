@@ -16,6 +16,10 @@ import re
 import sys
 from pathlib import Path
 
+for _stream in (sys.stdout, sys.stderr):  # Windows 콘솔(cp949/cp1252)에서도 한글이 깨지거나 죽지 않게
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 REQUIRED = {
     "00-overview.md": ["한 줄 아이디어", "현재 결정 상태", "핵심 가설 요약", "문서 지도"],
     "01-problem-customer.md": ["고객 세그먼트", "문제", "기존 대안과 한계", "첫 고객(Early adopter) 정의"],

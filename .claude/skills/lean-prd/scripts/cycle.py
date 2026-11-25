@@ -19,6 +19,10 @@ import sys
 from datetime import date
 from pathlib import Path
 
+for _stream in (sys.stdout, sys.stderr):  # Windows 콘솔(cp949/cp1252)에서도 한글이 깨지거나 죽지 않게
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 HERE = Path(__file__).resolve().parent
 
 
