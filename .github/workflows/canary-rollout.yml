@@ -1,0 +1,46 @@
+name: Canary Rollout Check
+
+# 카나리 1% → 10% → 50% → 100% 로직과 헬스체크 기반 자동 롤백을 검증한다.
+#   - 가상 시나리오 3개(healthy / error-spike / slow): 롤아웃 로직이 기대대로 승격·롤백하는지
+#   - 실제 URL(배포된 Pages 사이트): 실제 요청으로 오류율·p95 를 재서 같은 기준으로 판정
+# 실제 트래픽 전환은 하지 않는다. (Pages 는 트래픽 분할을 지원하지 않는다. Cloud Run 이라면 로그의 gcloud 명령을 쓴다.)
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 실제로 검사할 URL
+        default: https://03jiho.github.io/noticatch/
+  pull_request:
+    paths:
+      - scripts/canary_rollout.py
+      - rollout/**
+      - .github/workflows/canary-rollout.yml
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-env
+        with:
+          requirements: ""   # 표준 라이브러리만 쓰므로 설치할 패키지가 없다
+      - name: Simulated scenarios
+        run: python scripts/canary_rollout.py --scenario all --out canary-sim.md >/dev/null
+      - name: Simulated scenarios must behave as designed
+        run: |
+          grep -q "시나리오 healthy: 100% 승격 완료" canary-sim.md
+          grep -q "시나리오 error-spike: 롤백됨" canary-sim.md
+          grep -q "시나리오 slow: 롤백됨" canary-sim.md
+      - name: Live health check
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          URL: ${{ inputs.url }}
+        run: python scripts/canary_rollout.py --url "$URL" --out canary-live.md >/dev/null
+      - name: Summary
+        if: always()
+        run: |
+          cat canary-sim.md >> "$GITHUB_STEP_SUMMARY"
+          [ -f canary-live.md ] && cat canary-live.md >> "$GITHUB_STEP_SUMMARY" || true

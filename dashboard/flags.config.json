@@ -1,0 +1,40 @@
+{
+  "flags": [
+    {
+      "key": "beta-banner",
+      "description": "베타 테스터에게만 보이는 안내 띠 (대상 사용자 기준)",
+      "enabled": true,
+      "allowUsers": ["jiho"],
+      "allowGroups": ["beta"]
+    },
+    {
+      "key": "compact-mode",
+      "description": "표를 촘촘하게 보여 주는 모드 (30% 점진 공개, 사용자별로 항상 같은 결과)",
+      "enabled": true,
+      "percentage": 30
+    },
+    {
+      "key": "experimental-export",
+      "description": "JSON 내보내기 버튼 (개발·스테이징 환경에서만 켜짐, 운영은 꺼짐)",
+      "enabled": true,
+      "environments": ["development", "staging"]
+    },
+    {
+      "key": "legacy-widget",
+      "description": "킬 스위치 예시: enabled=false 이면 다른 조건과 상관없이 꺼짐",
+      "enabled": false,
+      "percentage": 100
+    }
+  ],
+  "experiments": [
+    {
+      "key": "cta-style",
+      "description": "버튼 문구 A/B 테스트. 노출은 exposure, 성공 지표는 cta_click",
+      "metric": "cta_click",
+      "variants": [
+        { "key": "control", "weight": 50, "label": "원본 문구: 데이터 보기" },
+        { "key": "treatment", "weight": 50, "label": "새 문구: 지금 확인하기" }
+      ]
+    }
+  ]
+}

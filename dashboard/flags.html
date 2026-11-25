@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NotiCatch · Feature Flags 실습</title>
+<style>
+  :root { color-scheme: light dark; --page:#f9f9f7; --surface:#fcfcfb; --border:rgba(11,11,11,.12); --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781; --on:#006300; --off:#d03b3b; --accent:#2a78d6; --banner:#fff4dc; }
+  @media (prefers-color-scheme: dark) { :root { --page:#0d0d0d; --surface:#1a1a19; --border:rgba(255,255,255,.12); --ink:#fff; --ink-2:#c3c2b7; --on:#3fc23f; --off:#ec835a; --accent:#3987e5; --banner:#3a2f14; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:920px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:16px; margin:0 0 8px; }
+  p.sub { margin:0 0 16px; color:var(--ink-2); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px; }
+  .row { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+  label { display:flex; flex-direction:column; font-size:12px; color:var(--ink-2); gap:4px; }
+  input[type=text], select { font:inherit; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--page); color:var(--ink); min-width:140px; }
+  button { font:inherit; padding:7px 14px; border-radius:6px; border:1px solid var(--border); background:var(--page); color:var(--ink); cursor:pointer; }
+  button.cta { background:var(--accent); color:#fff; border-color:transparent; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:13px; } th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .on { color:var(--on); font-weight:600; } .off { color:var(--off); font-weight:600; }
+  code { font-size:12px; } .muted { color:var(--muted); font-size:12px; }
+  #beta { background:var(--banner); border-radius:8px; padding:8px 12px; margin-bottom:12px; }
+  #log { max-height:220px; overflow:auto; font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; margin:0; }
+  body.compact td, body.compact th { padding:2px 8px; font-size:12px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Feature Flags · A/B 테스트 실습</h1>
+  <p class="sub">서버 없이 사용자 id 해시로 플래그를 판단합니다. 같은 id 는 언제나 같은 결과를 받습니다. <a href="./">← 대시보드</a></p>
+
+  <div id="beta" hidden>🧪 베타 테스터용 안내: <code>beta-banner</code> 플래그가 켜져 있습니다.</div>
+
+  <section class="card">
+    <h2>1. 내 상황 (여기를 바꿔 보세요)</h2>
+    <div class="row">
+      <label>사용자 id <input type="text" id="user" autocomplete="off"></label>
+      <label>환경
+        <select id="env"><option>production</option><option>staging</option><option>development</option></select>
+      </label>
+      <label>그룹
+        <select id="group"><option value="">(없음)</option><option value="beta">beta</option></select>
+      </label>
+      <button id="newuser" type="button">무작위 사용자로 바꾸기</button>
+    </div>
+    <p class="muted">주소 끝에 <code>?ff.compact-mode=on</code> 처럼 붙이면 해당 플래그를 강제로 켜고 끌 수 있습니다(override).</p>
+  </section>
+
+  <section class="card">
+    <h2>2. Feature Flag 판정</h2>
+    <table>
+      <thead><tr><th>플래그</th><th>결과</th><th>이유</th><th>설명</th></tr></thead>
+      <tbody id="flags"></tbody>
+    </table>
+    <p id="export-wrap" hidden><button id="export" type="button">JSON 내보내기 (experimental-export)</button></p>
+  </section>
+
+  <section class="card">
+    <h2>3. A/B 테스트: <code>cta-style</code></h2>
+    <p>당신의 variant: <b id="variant"></b> <span class="muted" id="variant-label"></span></p>
+    <p><button id="cta" type="button" class="cta"></button></p>
+    <p class="muted" id="stats"></p>
+    <button id="dist" type="button">가상 사용자 1,000명 할당해 보기</button>
+    <p class="muted" id="dist-out"></p>
+  </section>
+
+  <section class="card">
+    <h2>4. 이벤트 로그</h2>
+    <pre id="log">(아직 이벤트가 없습니다)</pre>
+  </section>
+
+  <section class="card">
+    <h2>샘플 표 (compact-mode 로 모양이 바뀝니다)</h2>
+    <table><thead><tr><th>지표</th><th>값</th></tr></thead>
+      <tbody><tr><td>배포 빈도</td><td>주 3회</td></tr><tr><td>리드타임</td><td>2.1시간</td></tr><tr><td>변경 실패율</td><td>4%</td></tr></tbody></table>
+  </section>
+</main>
+<script src="flags.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function randomId() { return "u" + Math.random().toString(36).slice(2, 8); }
+
+  var userId = params.get("user") || store("noti.user") || randomId();
+  store("noti.user", userId);
+  $("user").value = userId;
+  $("env").value = NotiFlags.detectEnv(location);
+  $("group").value = params.get("group") || "";
+
+  var overrides = {};
+  params.forEach(function (v, k) { if (k.indexOf("ff.") === 0) overrides[k.slice(3)] = (v === "on" || v === "true" || v === "1"); });
+
+  var config, client, clicks = 0, exposures = 0;
+  function sink(e) {
+    var log = $("log");
+    if (log.textContent.indexOf("아직") === 0) log.textContent = "";
+    log.textContent += JSON.stringify(e) + "\n";
+    log.scrollTop = log.scrollHeight;
+    var saved = []; try { saved = JSON.parse(store("noti.events") || "[]"); } catch (x) {}
+    saved.push(e); store("noti.events", JSON.stringify(saved.slice(-200)));
+  }
+
+  function render() {
+    client = NotiFlags.createClient({ config: config, userId: $("user").value.trim() || userId, env: $("env").value,
+                                      groups: $("group").value ? [$("group").value] : [], overrides: overrides, sink: sink });
+    var tbody = $("flags"); tbody.textContent = "";
+    config.flags.forEach(function (f) {
+      var r = client.explain(f.key), tr = document.createElement("tr");
+      [f.key, r.enabled ? "ON" : "OFF", r.reason, f.description].forEach(function (text, i) {
+        var td = document.createElement("td"); td.textContent = text;
+        if (i === 0) { var c = document.createElement("code"); c.textContent = text; td.textContent = ""; td.appendChild(c); }
+        if (i === 1) td.className = r.enabled ? "on" : "off";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    $("beta").hidden = !client.isEnabled("beta-banner");
+    $("export-wrap").hidden = !client.isEnabled("experimental-export");
+    document.body.classList.toggle("compact", client.isEnabled("compact-mode"));
+    var exp = config.experiments[0], v = client.variant(exp.key);
+    var info = exp.variants.filter(function (x) { return x.key === v; })[0];
+    $("variant").textContent = v; $("variant-label").textContent = "(" + info.label + ")";
+    $("cta").textContent = v === "treatment" ? "지금 확인하기" : "데이터 보기";
+    exposures++; $("stats").textContent = "";
+  }
+
+  $("cta").addEventListener("click", function () {
+    clicks++;
+    client.track("cta_click", { experiment: "cta-style", variant: client.variant("cta-style") });
+    $("stats").textContent = "cta_click 이벤트를 기록했습니다. (이번 접속에서 " + clicks + "회)";
+  });
+  $("export").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(client.events(), null, 2)], { type: "application/json" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "events.json"; a.click();
+  });
+  $("dist").addEventListener("click", function () {
+    var exp = config.experiments[0], counts = {}, n = 1000;
+    for (var i = 0; i < n; i++) { var v = NotiFlags.assign(exp, "sim-" + i); counts[v] = (counts[v] || 0) + 1; }
+    var again = 0; for (var j = 0; j < n; j++) if (NotiFlags.assign(exp, "sim-" + j) === NotiFlags.assign(exp, "sim-" + j)) again++;
+    $("dist-out").textContent = JSON.stringify(counts) + " · 같은 id 재할당 일치 " + again + "/" + n;
+  });
+  $("newuser").addEventListener("click", function () { $("user").value = randomId(); store("noti.user", $("user").value); render(); });
+  ["user", "env", "group"].forEach(function (id) { $(id).addEventListener("change", function () { store("noti.user", $("user").value); render(); }); });
+
+  fetch("flags.config.json").then(function (r) { return r.json(); }).then(function (c) { config = c; render(); })
+    .catch(function () { $("flags").textContent = "설정 파일을 불러오지 못했습니다."; });
+})();
+</script>
+</body>
+</html>
