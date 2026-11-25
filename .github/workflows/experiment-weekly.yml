@@ -1,0 +1,72 @@
+# 주간 리포트(월요일)와 최종 결정 문서(실험 마지막 날 다음 날)를 만든다. 결과는 문서로 커밋하고 이슈로도 남긴다.
+name: Experiment Weekly
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"        # 매주 월요일 09:00 KST: 주간 리포트
+    - cron: "30 15 9 12 *"     # 12월 10일 00:30 KST: 실험이 끝난 직후 최종 결정
+  workflow_dispatch:
+    inputs:
+      final:
+        description: 최종 결정 문서로 만들기 (실험 종료 전에는 중간 값이라고 표시됨)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: experiment-metrics
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: ./.github/actions/setup-python-env
+        with:
+          requirements: ""
+      - name: Build report
+        id: build
+        env:
+          FORCE_FINAL: ${{ inputs.final && '1' || '' }}
+        run: |
+          today=$(TZ=Asia/Seoul date +%F)
+          end=$(python -c "import json;print(json.load(open('experiments/cta-style.json'))['end'])")
+          if [ -n "$FORCE_FINAL" ] || [[ "$today" > "$end" ]]; then
+            out=docs/lean/decision-final.md
+            python scripts/experiment_report.py --input metrics/experiment-daily.jsonl --out "$out" --final --label "$today"
+            echo "title=실험 최종 결정 $today" >> "$GITHUB_OUTPUT"
+          else
+            out="docs/lean/reports/$today.md"
+            python scripts/experiment_report.py --input metrics/experiment-daily.jsonl --out "$out" --label "$today"
+            echo "title=실험 주간 리포트 $today" >> "$GITHUB_OUTPUT"
+          fi
+          echo "out=$out" >> "$GITHUB_OUTPUT"
+          cat "$out" >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit report
+        env:
+          OUT: ${{ steps.build.outputs.out }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          if git diff --cached --quiet; then
+            echo "변경 없음"
+          else
+            git commit -m "chore(experiment): 리포트 자동 생성 [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Open report issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: ${{ steps.build.outputs.title }}
+          OUT: ${{ steps.build.outputs.out }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/issues" -f title="$TITLE" -F body=@"$OUT" -f 'labels[]=type: experiment' --silent

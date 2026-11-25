@@ -15,6 +15,9 @@ labels:
   - name: "type: design"
     color: "5319e7"
     description: 설계 (스키마, API 명세, 구조)
+  - name: "type: experiment"
+    color: "c2e0c6"
+    description: Lean Startup 실험(가설, 지표, 결정)
   - name: "type: research"
     color: "fbca04"
     description: 조사·사용자 인터뷰

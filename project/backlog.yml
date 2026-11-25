@@ -12,6 +12,11 @@ milestones:
     due: "2026-10-31"
     description: "게시판 2곳 공지를 수집해 API로 조회할 수 있는 MVP를 만든다. 중간 발표 데모 기준."
 
+  - title: "Sprint 6 · 실험 운영 (13주차)"
+    start: "2026-11-26"
+    due: "2026-12-09"
+    description: "버튼 문구 A/B 테스트를 2주 운영하고, 페르소나 피드백에서 나온 가설을 실험 백로그로 관리한다."
+
 issues:
   # ---------------- Sprint 1
   - title: "재학생 인터뷰·설문으로 공지 확인 습관 조사"
@@ -186,3 +191,78 @@ issues:
       - [ ] 본문에서 신청 기간·마감일 추출
       - [ ] 사용자별 .ics 구독 URL
       - [ ] D-3, D-1 리마인드
+
+  # ---------------- 실험 백로그 (13주차, 페르소나 피드백에서 나온 가설)
+  - title: "[실험] cta-style: 버튼 문구 A/B 2주 운영"
+    milestone: "Sprint 6 · 실험 운영 (13주차)"
+    labels: ["type: experiment", "area: frontend", "priority: P0", "size: 3"]
+    body: |
+      ## 가설
+      '지금 확인하기'(긴급 문구)가 '데이터 보기'보다 버튼 클릭률(CTR)을 올린다.
+
+      ## 규칙 (실험 전에 고정)
+      `experiments/cta-style.json` 의 결정 규칙을 따른다. 상대 +10% 이상이고 p<0.05 이면 Persevere, 아니면 Pivot.
+
+      ## 자동화
+      - 매일 23:50 KST `Experiment Daily` 가 지표를 수집한다.
+      - 매주 월요일 `Experiment Weekly` 가 리포트 이슈를 만들고, 마지막 날 이후 결정 문서(`docs/lean/decision-final.md`)를 만든다.
+
+      ## 완료 조건
+      - [ ] 2026-11-26 ~ 12-09 14일치 수집
+      - [ ] 최종 결정 문서 생성
+
+  - title: "[실험] 마감일 날짜 표기 다양화 지원 (12.5(금) 형식)"
+    milestone: "Sprint 6 · 실험 운영 (13주차)"
+    labels: ["type: experiment", "area: notify", "priority: P1", "size: 2"]
+    body: |
+      ## 발견
+      페르소나 p07(오태양)의 시나리오 테스트가 `11.30(일)~12.5(금)` 형식의 마감일을 못 읽는 결함을 찾았다.
+
+      ## 조치
+      요일 괄호가 붙은 `M.D` 표기를 지원했다 (TDD: red → green). 요일 없는 `3.5점` 같은 소수는 날짜로 보지 않는다.
+
+      ## 완료 조건
+      - [x] 테스트 추가와 구현
+      - [ ] 실제 공지 샘플 20건으로 추출 정확도 확인
+
+  - title: "[실험] 요약 알림(하루 한 번) 수요 검증 — 페르소나 p03"
+    milestone: "Sprint 6 · 실험 운영 (13주차)"
+    labels: ["type: experiment", "area: notify", "priority: P2", "size: 3"]
+    body: |
+      ## 가설
+      신규 사용자는 알림이 잦으면 끄므로, 하루 한 번 요약 알림이 알림 유지율을 높인다.
+
+      ## 지표
+      구독 후 7일 알림 유지율 (요약 vs 즉시)
+
+      ## 완료 조건
+      - [ ] 요약 알림 옵션 구현 (Feature Flag 뒤)
+      - [ ] 2주 운영 후 유지율 비교, Pivot/Persevere 기록
+
+  - title: "[실험] 구독 설정 공유 링크 — 페르소나 p04, p10"
+    milestone: "Sprint 6 · 실험 운영 (13주차)"
+    labels: ["type: experiment", "area: frontend", "priority: P2", "size: 5"]
+    body: |
+      ## 가설
+      학생회·대학원생처럼 게시판을 여러 개 구독하는 사용자는 설정을 링크로 공유할 수 있을 때 구독자가 늘어난다.
+
+      ## 지표
+      공유 링크로 들어와 구독을 시작한 사용자 수
+
+      ## 완료 조건
+      - [ ] 구독 설정 공유 링크 구현 (Feature Flag 뒤)
+      - [ ] 2주 운영 후 신규 구독자 수 비교, Pivot/Persevere 기록
+
+  - title: "[실험] 가드레일 위반 세그먼트 대응: 쉬운 문구와 큰 글씨 — 페르소나 p08, p09"
+    milestone: "Sprint 6 · 실험 운영 (13주차)"
+    labels: ["type: experiment", "area: frontend", "priority: P1", "size: 3"]
+    body: |
+      ## 발견
+      A/B 사전 시뮬레이션에서 외국인 유학생(p08), 만학도(p09) 세그먼트의 CTR 이 신규 문구에서 25% 이상 떨어졌다.
+
+      ## 가설
+      관용적 표현을 피한 쉬운 문구와 글씨 크기 조절을 제공하면 두 세그먼트의 CTR 하락이 없어진다.
+
+      ## 완료 조건
+      - [ ] 쉬운 문구 variant 와 글씨 크기 옵션 구현 (Feature Flag 뒤)
+      - [ ] 두 세그먼트의 CTR 이 원본 이상인지 확인

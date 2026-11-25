@@ -368,3 +368,9 @@ Feature Flag 4개(환경·대상 사용자·점진 공개·킬 스위치), A/B �
 TDD(Red-Green-Refactor)로 핵심 기능 6개(마감일 추출, 중복 제거, 키워드 매칭, `.ics` 피드, D-day, 리마인드)를 만들고, 커버리지 80% 게이트를 CI 에 걸었다(현재 86.8%). Playwright E2E 는 실패 시 스크린샷을 아티팩트로 저장한다.
 
 - 정리: [`docs/testing/week12-report.md`](docs/testing/week12-report.md)
+
+## 17. 13주차: Lean Startup 실험 운영
+
+LLM 페르소나 10명의 시나리오를 테스트 코드로 평가하고(결함 1건 발견·수정), `cta-style` A/B 실험을 2주 동안 매일 자동 수집·주간 리포트·최종 결정 문서로 운영한다. 사용자와 데이터는 모두 가상(합성)이다.
+
+- 정리: [`docs/lean/week13-report.md`](docs/lean/week13-report.md) · 결정: [`docs/lean/decision.md`](docs/lean/decision.md)

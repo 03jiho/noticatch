@@ -15,6 +15,8 @@ _PATTERNS: tuple[tuple[re.Pattern[str], bool], ...] = (
     (re.compile(r"(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일"), True),
     (re.compile(r"(?<![\d.\-/])(\d{1,2})\s*월\s*(\d{1,2})\s*일"), False),
     (re.compile(r"(?<![\d.\-/])(\d{1,2})/(\d{1,2})(?![\d/])"), False),
+    # "12.5(금)", "11. 30.(일)": 요일 괄호가 붙은 경우만 인정한다. ("3.5점", "1.5배" 같은 소수와 구분하려고)
+    (re.compile(r"(?<![\d.\-/])(\d{1,2})\.\s*(\d{1,2})\.?\s*\([월화수목금토일]\)"), False),
 )
 _YEAR_BEFORE = re.compile(r"\d{4}\s*년\s*$")
 

@@ -41,3 +41,15 @@ def test_invalid_calendar_dates_are_ignored():
 
 def test_without_range_marker_the_latest_date_wins():
     assert extract_deadline("발표 12월 5일, 서류 마감 12월 13일", today=TODAY) == date(2026, 12, 13)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("11.30(일)~12.5(금)", date(2026, 12, 5)),
+        ("11. 30.(일) ~ 12. 5.(금)", date(2026, 12, 5)),
+        ("평점 3.5점, 경쟁률 1.5배", None),  # 요일 괄호가 없는 소수는 날짜가 아니다
+    ],
+)
+def test_month_dot_day_needs_a_weekday_in_parentheses(text, expected):
+    assert extract_deadline(text, today=TODAY) == expected
